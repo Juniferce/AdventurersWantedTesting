@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Sheet | Signal From Space</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --accent-glow: #00ff9d;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-flash" class="intro-flash" style="background-color: #00ff9d;"></div>
+
+    <div class="circuit-bg"></div>
+    <div class="circuit-pulse-overlay"></div>
+
+    <div id="device-debug-id">ID: <span id="uuid-display">Generating...</span></div>
+
+    <div id="app-container" style="background: transparent;">
+        <section class="view active" style="align-items: center; justify-content: flex-start; padding-top: 50px;">
+            
+            <div class="glass-card character-sheet">
+                
+                <div class="profile-section">
+                    <div id="char-avatar" class="profile-avatar">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="char-name" style="margin: 0; font-size: 2rem;">Loading...</h2>
+                        <p id="char-class" style="margin: 5px 0 0; color: var(--accent-glow); text-transform: uppercase; letter-spacing: 1px;">-</p>
+                    </div>
+                </div>
+
+                <div class="hits-section">
+                    <h3 style="margin: 0 0 10px 0; font-weight: 300; letter-spacing: 2px;">SYSTEM INTEGRITY (HITS)</h3>
+                    <div class="hit-circles" id="hit-tracker">
+                        </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">STR</div>
+                        <div class="stat-value" id="stat-str">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">DEX</div>
+                        <div class="stat-value" id="stat-dex">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">CON</div>
+                        <div class="stat-value" id="stat-con">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">INT</div>
+                        <div class="stat-value" id="stat-int">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">WIS</div>
+                        <div class="stat-value" id="stat-wis">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">CHA</div>
+                        <div class="stat-value" id="stat-cha">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="goBack()" class="secondary-btn" style="margin-top: 30px;">
+                ← Exit Terminal
+            </button>
+
+        </section>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
+            authDomain: "bnm-adventurers-wanted.firebaseapp.com",
+            projectId: "bnm-adventurers-wanted",
+            storageBucket: "bnm-adventurers-wanted.firebasestorage.app",
+            messagingSenderId: "833066129939",
+            appId: "1:833066129939:web:016aed9208195881373de6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let deviceId = localStorage.getItem('device_uuid') || crypto.randomUUID();
+        document.getElementById('uuid-display').innerText = deviceId.substring(0, 8);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const flash = document.getElementById('intro-flash');
+            setTimeout(() => {
+                flash.style.opacity = '0';
+            }, 50);
+        });
+
+        const charId = localStorage.getItem('currentCharacterId');
+        
+        if (!charId) {
+            alert("No character found. Returning to menu.");
+            window.location.href = "index.html";
+        }
+
+        // Listen for real-time updates so if the GM changes stats/health, it updates instantly!
+        onSnapshot(doc(db, "characters", charId), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                
+                document.getElementById('char-name').innerText = data.name;
+                document.getElementById('char-class').innerText = data.class;
+
+                // Handle the image (if it's not nil, replace the SVG icon with the picture)
+                if (data.image && data.image !== "nil") {
+                    const avatar = document.getElementById('char-avatar');
+                    avatar.innerHTML = ""; 
+                    avatar.style.backgroundImage = `url(${data.image})`;
+                }
+
+                // Render Stats (With fallbacks just in case old characters are loaded)
+                const stats = data.stats || { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 };
+                document.getElementById('stat-str').innerText = stats.strength;
+                document.getElementById('stat-dex').innerText = stats.dexterity;
+                document.getElementById('stat-con').innerText = stats.constitution;
+                document.getElementById('stat-int').innerText = stats.intelligence;
+                document.getElementById('stat-wis').innerText = stats.wisdom;
+                document.getElementById('stat-cha').innerText = stats.charisma;
+
+                // Render Hits
+                const hits = data.hits || { current: 3, max: 3 };
+                const tracker = document.getElementById('hit-tracker');
+                tracker.innerHTML = ""; // Clear existing
+                
+                for (let i = 0; i < hits.max; i++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'hit-circle';
+                    if (i < hits.current) {
+                        circle.classList.add('filled');
+                    }
+                    tracker.appendChild(circle);
+                }
+            } else {
+                alert("Character has been deleted.");
+                window.location.href = "index.html";
+            }
+        });
+
+        window.goBack = () => {
+            localStorage.setItem('returningFromCharacter', 'true');
+            window.location.href = "index.html";
+        };
+    </script>
+</body>
+</html>

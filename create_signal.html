@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Signal From Space</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --accent-glow: #00ff9d;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-flash" class="intro-flash" style="background-color: #00ff9d;"></div>
+
+    <div class="circuit-bg"></div>
+    <div class="circuit-pulse-overlay"></div>
+
+    <input type="file" id="photo-input" accept="image/*" capture="camera" style="display:none">
+
+    <div id="device-debug-id">ID: <span id="uuid-display">Generating...</span></div>
+
+    <div id="app-container" style="background: transparent;">
+        <section class="view active">
+            <h1 class="glow-text" data-theme="space">The Signal From Space</h1>
+            
+            <div class="glass-card creation-form">
+                <input type="text" id="char-name" placeholder="Character Name..." class="sleek-input" autocomplete="off">
+                
+                <div class="photo-capture">
+                    <div class="capture-circle" id="camera-trigger" onclick="triggerCamera()">
+                        <span>Snap Minifig!</span>
+                    </div>
+                </div>
+
+                <div class="class-cycler">
+                    <button class="cycle-arrow" id="prev-class">◄</button>
+                    <div class="class-display">
+                        <p>I'm a...</p>
+                        <h3 id="current-class">Navigator Pilot</h3>
+                    </div>
+                    <button class="cycle-arrow" id="next-class">►</button>
+                </div>
+
+                <button class="primary-btn" id="confirm-character-btn">Create Character</button>
+            </div>
+
+            <button onclick="goBack()" class="secondary-btn" style="margin-top: 30px;">
+                ← Back to Menu
+            </button>
+        </section>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
+            authDomain: "bnm-adventurers-wanted.firebaseapp.com",
+            projectId: "bnm-adventurers-wanted",
+            storageBucket: "bnm-adventurers-wanted.firebasestorage.app",
+            messagingSenderId: "833066129939",
+            appId: "1:833066129939:web:016aed9208195881373de6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let deviceId = localStorage.getItem('device_uuid') || crypto.randomUUID();
+        localStorage.setItem('device_uuid', deviceId);
+        document.getElementById('uuid-display').innerText = deviceId.substring(0, 8);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const flash = document.getElementById('intro-flash');
+            setTimeout(() => {
+                flash.style.opacity = '0';
+            }, 50);
+        });
+
+        const classes = ["Navigator Pilot", "Sharpshooter", "Mechanic", "Researcher", "Demolitions Expert"];
+        let currentIndex = 0;
+
+        function updateClassDisplay() {
+            document.getElementById('current-class').innerText = classes[currentIndex];
+        }
+
+        window.triggerCamera = () => document.getElementById('photo-input').click();
+
+        document.getElementById('photo-input').onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                const trigger = document.getElementById('camera-trigger');
+                trigger.style.backgroundImage = `url(${url})`;
+                trigger.style.backgroundSize = 'cover';
+                trigger.style.backgroundPosition = 'center';
+                trigger.innerHTML = '';
+            }
+        };
+
+        document.getElementById('prev-class').addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + classes.length) % classes.length;
+            updateClassDisplay();
+        });
+
+        document.getElementById('next-class').addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % classes.length;
+            updateClassDisplay();
+        });
+
+        document.getElementById('confirm-character-btn').addEventListener('click', async () => {
+            const name = document.getElementById('char-name').value.trim();
+            if (!name) return alert("Character name is required");
+
+            const btn = document.getElementById('confirm-character-btn');
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                // Initialize default stats, hits, and nil image
+                await addDoc(collection(db, "characters"), {
+                    name: name,
+                    class: document.getElementById('current-class').innerText,
+                    campaign: "The Signal From Space",
+                    deviceId: deviceId,
+                    image: "nil",
+                    stats: {
+                        strength: 10,
+                        dexterity: 10,
+                        constitution: 10,
+                        intelligence: 10,
+                        wisdom: 10,
+                        charisma: 10
+                    },
+                    hits: {
+                        current: 3,
+                        max: 3
+                    },
+                    createdAt: serverTimestamp()
+                });
+
+                localStorage.setItem('returningFromCharacter', 'true');
+                window.location.href = "character_signal.html"; 
+            } catch (error) {
+                console.error(error);
+                alert("Failed to save character");
+                btn.innerText = "Create Character";
+                btn.disabled = false;
+            }
+        });
+
+        window.goBack = () => {
+            localStorage.setItem('returningFromCharacter', 'true');
+            window.location.href = "index.html";
+        };
+
+        updateClassDisplay();
+    </script>
+</body>
+</html>

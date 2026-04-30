@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GM Terminal | Adventurers Wanted</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="admin-header">
+        <h1 class="glow-text" style="margin-bottom: 20px;">GM COMMAND TERMINAL</h1>
+        
+        <div class="main-tabs">
+            <button class="tab-btn active" onclick="switchTab('characters')">Characters</button>
+            <button class="tab-btn" onclick="switchTab('devices')">Devices</button>
+            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+        </div>
+
+        <div class="filter-bar" id="character-filters">
+            <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All Campaigns</button>
+            <button class="filter-btn" data-filter="The Signal From Space" onclick="setFilter('The Signal From Space')">Signal From Space</button>
+            <button class="filter-btn" data-filter="Escape From Leviathan" onclick="setFilter('Escape From Leviathan')">Escape From Leviathan</button>
+            <button class="filter-btn" data-filter="The Treasure in Ervan's Keep" onclick="setFilter('The Treasure in Ervan\'s Keep')">Ervan's Keep</button>
+        </div>
+    </div>
+
+    <main class="character-grid" id="master-character-list"></main>
+
+    <main class="character-grid hidden" id="master-device-list"></main>
+
+    <main class="settings-panel hidden" id="master-settings-list">
+        <h2 style="text-align: center; color: var(--accent-glow); margin-bottom: 10px;">Active Campaigns</h2>
+        
+        <div class="setting-row">
+            <span class="setting-label">Escape From Leviathan</span>
+            <label class="switch">
+                <input type="checkbox" data-campaign="Escape From Leviathan" onchange="toggleCampaign(this.dataset.campaign, this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="setting-row">
+            <span class="setting-label">The Signal From Space</span>
+            <label class="switch">
+                <input type="checkbox" data-campaign="The Signal From Space" onchange="toggleCampaign(this.dataset.campaign, this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-row">
+            <span class="setting-label">The Treasure in Ervan's Keep</span>
+            <label class="switch">
+                <input type="checkbox" data-campaign="The Treasure in Ervan's Keep" onchange="toggleCampaign(this.dataset.campaign, this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, query, onSnapshot, orderBy, updateDoc, doc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
+            authDomain: "bnm-adventurers-wanted.firebaseapp.com",
+            projectId: "bnm-adventurers-wanted",
+            storageBucket: "bnm-adventurers-wanted.firebasestorage.app",
+            messagingSenderId: "833066129939",
+            appId: "1:833066129939:web:016aed9208195881373de6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Updated with the new Space Classes
+        const campaignClasses = {
+            "The Signal From Space": ["Navigator Pilot", "Sharpshooter", "Mechanic", "Researcher", "Demolitions Expert"],
+            "Escape From Leviathan": ["Pirate", "Captain", "Deckhand", "Gunner", "Cook"],
+            "The Treasure in Ervan's Keep": ["Adventurer", "Knight", "Mage", "Rogue", "Cleric"]
+        };
+
+        let currentTab = 'characters';
+        let currentFilter = 'all';
+        let allCharacters = [];
+        let deviceNicknames = {};
+        const deleteTimeouts = {};
+
+        // --- TAB LOGIC ---
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === tab);
+            });
+
+            document.getElementById('character-filters').classList.add('hidden');
+            document.getElementById('master-character-list').classList.add('hidden');
+            document.getElementById('master-device-list').classList.add('hidden');
+            document.getElementById('master-settings-list').classList.add('hidden');
+
+            if (tab === 'characters') {
+                document.getElementById('character-filters').classList.remove('hidden');
+                document.getElementById('master-character-list').classList.remove('hidden');
+                renderCharacters();
+            } else if (tab === 'devices') {
+                document.getElementById('master-device-list').classList.remove('hidden');
+                renderDevices();
+            } else if (tab === 'settings') {
+                document.getElementById('master-settings-list').classList.remove('hidden');
+            }
+        };
+
+        window.setFilter = function(val) {
+            currentFilter = val;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === val);
+            });
+            renderCharacters(); 
+        };
+
+        // --- FIREBASE LISTENERS ---
+        const charRef = collection(db, "characters");
+        const q = query(charRef, orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            allCharacters = snapshot.docs;
+            if (currentTab === 'characters') renderCharacters();
+            if (currentTab === 'devices') renderDevices();
+        });
+
+        onSnapshot(collection(db, "devices"), (snapshot) => {
+            deviceNicknames = {};
+            snapshot.forEach(doc => {
+                deviceNicknames[doc.id] = doc.data().nickname;
+            });
+            if (currentTab === 'characters') renderCharacters();
+            if (currentTab === 'devices') renderDevices();
+        });
+
+        onSnapshot(doc(db, "settings", "campaigns"), (docSnap) => {
+            const settings = docSnap.exists() ? docSnap.data() : {};
+            
+            document.querySelectorAll('.switch input').forEach(input => {
+                const campaignName = input.dataset.campaign;
+                input.checked = settings[campaignName] !== false; 
+            });
+        });
+
+        // --- RENDER LOGIC ---
+        function renderCharacters() {
+            const grid = document.getElementById('master-character-list');
+            grid.innerHTML = ""; 
+            let lastSessionKey = "";
+
+            const allKnownDevices = [...new Set([
+                ...allCharacters.map(doc => doc.data().deviceId).filter(Boolean),
+                ...Object.keys(deviceNicknames)
+            ])];
+
+            allCharacters.forEach((charDoc) => {
+                const data = charDoc.data();
+                const charId = charDoc.id;
+                const shortId = charId.substring(0, 7); 
+
+                const date = data.createdAt?.toDate() || new Date();
+                const sessionKey = `${date.toLocaleDateString()} - ${date.getHours()}:00`;
+
+                if (currentFilter === 'all' || data.campaign === currentFilter) {
+                    
+                    if (sessionKey !== lastSessionKey) {
+                        const header = document.createElement('div');
+                        header.className = "session-header";
+                        header.innerHTML = `SESSION: ${sessionKey}`;
+                        grid.appendChild(header);
+                        lastSessionKey = sessionKey;
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = "glass-card gm-char-card";
+                    
+                    const classOptions = campaignClasses[data.campaign] || ["Unknown"];
+                    const safeClassOptions = classOptions.includes(data.class) 
+                        ? classOptions 
+                        : [...classOptions, data.class];
+
+                    const selectHtml = safeClassOptions.map(cls => 
+                        `<option value="${cls}" ${data.class === cls ? 'selected' : ''}>${cls}</option>`
+                    ).join('');
+
+                    const deviceLabel = deviceNicknames[data.deviceId] || `Device: ${data.deviceId.substring(0,8)}`;
+
+                    const deviceOptionsHtml = allKnownDevices.map(dId => {
+                        const dName = deviceNicknames[dId] || `Device: ${dId.substring(0,8)}`;
+                        return `<option value="${dId}" ${data.deviceId === dId ? 'selected' : ''}>${dName}</option>`;
+                    }).join('');
+
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="name-container">
+                                <span id="text-${charId}" class="name-text">${data.name}</span>
+                                <input type="text" id="input-${charId}" class="name-input hidden" value="${data.name}" 
+                                    onkeydown="if(event.key==='Enter') toggleEdit('${charId}')">
+                                <span class="edit-icon" onclick="toggleEdit('${charId}')">✏️</span>
+                            </div>
+                            <button id="trash-${charId}" class="trash-btn" onclick="handleDelete('${charId}')">🗑️</button>
+                        </div>
+                        <select class="fancy-select" onchange="updateCharacterField('${charId}', 'class', this.value)">
+                            ${selectHtml}
+                        </select>
+                        <div class="card-meta">
+                            <span>${data.campaign}</span>
+                            
+                            <div style="position: relative;">
+                                <span id="dev-badge-${charId}" class="device-badge editable-badge" onclick="toggleDeviceSelect('${charId}')">
+                                    ${deviceLabel} ⟲
+                                </span>
+                                <select id="dev-select-${charId}" class="device-select hidden" 
+                                        onchange="updateCharacterField('${charId}', 'deviceId', this.value)" 
+                                        onblur="toggleDeviceSelect('${charId}')">
+                                    ${deviceOptionsHtml}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mini-id">ID: ${shortId}</div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        function renderDevices() {
+            const grid = document.getElementById('master-device-list');
+            grid.innerHTML = "";
+
+            const uniqueDevices = [...new Set(allCharacters.map(doc => doc.data().deviceId).filter(Boolean))];
+
+            uniqueDevices.forEach(deviceId => {
+                const currentNick = deviceNicknames[deviceId] || "";
+                const card = document.createElement('div');
+                card.className = "glass-card gm-char-card";
+                
+                const charsFromDevice = allCharacters.filter(doc => doc.data().deviceId === deviceId).length;
+
+                card.innerHTML = `
+                    <div style="display:flex; flex-direction: column; gap: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--accent-glow); letter-spacing: 1px;">DEVICE ID: ${deviceId.substring(0,8)}</span>
+                        
+                        <div class="name-container" style="margin-top: 10px;">
+                            <span id="text-dev-${deviceId}" class="name-text" style="font-size: 1.3rem;">${currentNick || '<i>Unnamed Device</i>'}</span>
+                            <input type="text" id="input-dev-${deviceId}" class="name-input hidden" placeholder="Enter Player Name..." value="${currentNick}" 
+                                onkeydown="if(event.key==='Enter') saveDeviceNickname('${deviceId}')">
+                            <span class="edit-icon" onclick="toggleDeviceEdit('${deviceId}')">✏️</span>
+                        </div>
+                        
+                        <div class="card-meta" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                            <span>Active Characters: ${charsFromDevice}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            if (uniqueDevices.length === 0) {
+                grid.innerHTML = "<p style='grid-column: 1/-1; text-align: center; opacity: 0.5;'>No devices found yet.</p>";
+            }
+        }
+
+        // --- ACTIONS ---
+        window.updateCharacterField = async (id, field, value) => {
+            await updateDoc(doc(db, "characters", id), { [field]: value });
+        };
+
+        window.toggleEdit = async (id) => {
+            const textEl = document.getElementById(`text-${id}`);
+            const inputEl = document.getElementById(`input-${id}`);
+            if (textEl.classList.contains('hidden')) {
+                const newName = inputEl.value;
+                textEl.innerText = newName;
+                textEl.classList.remove('hidden');
+                inputEl.classList.add('hidden');
+                await updateCharacterField(id, 'name', newName);
+            } else {
+                textEl.classList.add('hidden');
+                inputEl.classList.remove('hidden');
+                inputEl.focus();
+            }
+        };
+
+        window.toggleDeviceSelect = (id) => {
+            const badge = document.getElementById(`dev-badge-${id}`);
+            const select = document.getElementById(`dev-select-${id}`);
+            if (!badge || !select) return;
+            
+            if (badge.classList.contains('hidden')) {
+                badge.classList.remove('hidden');
+                select.classList.add('hidden');
+            } else {
+                badge.classList.add('hidden');
+                select.classList.remove('hidden');
+                select.focus();
+            }
+        };
+
+        window.toggleDeviceEdit = (deviceId) => {
+            const textEl = document.getElementById(`text-dev-${deviceId}`);
+            const inputEl = document.getElementById(`input-dev-${deviceId}`);
+            if (textEl.classList.contains('hidden')) {
+                window.saveDeviceNickname(deviceId);
+            } else {
+                textEl.classList.add('hidden');
+                inputEl.classList.remove('hidden');
+                inputEl.focus();
+            }
+        };
+
+        window.saveDeviceNickname = async (deviceId) => {
+            const inputEl = document.getElementById(`input-dev-${deviceId}`);
+            const newName = inputEl.value.trim();
+            await setDoc(doc(db, "devices", deviceId), { nickname: newName }, { merge: true });
+        };
+
+        window.handleDelete = async (id) => {
+            const btn = document.getElementById(`trash-${id}`);
+            if (btn.classList.contains('armed')) {
+                clearTimeout(deleteTimeouts[id]);
+                await deleteDoc(doc(db, "characters", id));
+            } else {
+                btn.classList.add('armed');
+                deleteTimeouts[id] = setTimeout(() => btn.classList.remove('armed'), 3000);
+            }
+        };
+
+        window.toggleCampaign = async (campaign, isActive) => {
+            await setDoc(doc(db, "settings", "campaigns"), {
+                [campaign]: isActive
+            }, { merge: true });
+        };
+
+    </script>
+</body>
+</html>
