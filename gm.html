@@ -5,91 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GM Terminal | Adventurers Wanted</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .admin-nav {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .campaign-form {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 10px;
-            margin-bottom: 30px;
-            align-items: end;
-        }
-        .campaign-item {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 100px 100px auto;
-            gap: 15px;
-            align-items: center;
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-        }
-        .color-preview {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            border: 1px solid white;
-        }
-        .solo-btn {
-            background: var(--accent-glow);
-            color: black;
-            font-weight: bold;
-            font-size: 0.7rem;
-            padding: 5px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-        }
-    </style>
 </head>
 <body>
 
     <div class="admin-header">
-        <h1 class="glow-text">GM COMMAND TERMINAL</h1>
-        <div class="admin-nav">
-            <button class="tab-btn active" onclick="switchTab('players')">Players</button>
-            <button class="tab-btn" onclick="switchTab('campaigns')">Campaigns</button>
+        <h1 class="glow-text">GM COMMAND</h1>
+        <div class="main-tabs">
+            <button class="tab-btn active" id="btn-players" onclick="switchTab('players')">Players</button>
+            <button class="tab-btn" id="btn-campaigns" onclick="switchTab('campaigns')">Campaigns</button>
         </div>
     </div>
 
     <section id="tab-players" class="tab-content active">
-        <div class="filter-bar" id="player-filters">
-            <button class="filter-btn active" onclick="setFilter('all')">All Players</button>
-        </div>
+        <div class="filter-bar" id="player-filters"></div>
         <main class="character-grid" id="master-character-list"></main>
     </section>
 
-    <section id="tab-campaigns" class="tab-content hidden" style="max-width: 1000px; margin: 0 auto; padding: 20px;">
-        <div class="glass-card">
-            <h3>Register New Campaign</h3>
-            <div class="campaign-form">
-                <div>
-                    <label>Name</label>
-                    <input type="text" id="new-camp-name" class="sleek-input" placeholder="The Signal From Space" style="margin:0">
-                </div>
-                <div>
-                    <label>Color (Hex)</label>
-                    <input type="text" id="new-camp-color" class="sleek-input" placeholder="#00ff9d" style="margin:0">
-                </div>
-                <div>
-                    <label>Poster Image</label>
-                    <input type="text" id="new-camp-img" class="sleek-input" placeholder="signal_poster.png" style="margin:0">
-                </div>
-                <button class="primary-btn" onclick="addCampaign()" style="padding: 10px;">Add</button>
+    <section id="tab-campaigns" class="tab-content hidden" style="padding: 20px; max-width: 800px; margin: 0 auto;">
+        <div class="glass-card" style="margin-bottom: 20px;">
+            <h3>Create New Campaign</h3>
+            <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                <input type="text" id="new-name" placeholder="Name" class="sleek-input" style="flex:2; margin:0">
+                <input type="text" id="new-color" placeholder="#Hex" class="sleek-input" style="flex:1; margin:0">
+                <input type="text" id="new-img" placeholder="image.png" class="sleek-input" style="flex:1; margin:0">
+                <button class="primary-btn" onclick="addNewCampaign()" style="flex:0.5; padding: 10px;">Add</button>
             </div>
         </div>
-
-        <div id="campaign-list" style="margin-top: 30px;">
-            </div>
+        <div id="campaign-list-container"></div>
     </section>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, query, onSnapshot, orderBy, updateDoc, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -103,136 +50,62 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let currentFilter = 'all';
-        const deleteTimeouts = {};
-
-        // --- TAB LOGIC ---
-        window.switchTab = (tab) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            event.target.classList.add('active');
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        // --- Tab Logic ---
+        window.switchTab = (t) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${t}`).classList.remove('hidden');
+            document.getElementById(`btn-${t}`).classList.add('active');
         };
 
-        // --- CAMPAIGN MANAGEMENT ---
-        window.addCampaign = async () => {
-            const name = document.getElementById('new-camp-name').value;
-            const color = document.getElementById('new-camp-color').value;
-            const image = document.getElementById('new-camp-img').value;
-            if(!name || !color || !image) return alert("Fill all fields");
-
-            await addDoc(collection(db, "campaigns"), {
-                name, color, image, enabled: true, order: Date.now()
-            });
-            
-            document.getElementById('new-camp-name').value = '';
-            document.getElementById('new-camp-color').value = '';
-            document.getElementById('new-camp-img').value = '';
+        // --- Campaign Logic ---
+        window.addNewCampaign = async () => {
+            const name = document.getElementById('new-name').value;
+            const color = document.getElementById('new-color').value;
+            const image = document.getElementById('new-img').value;
+            if(!name) return;
+            await addDoc(collection(db, "campaigns"), { name, color, image, enabled: true, order: Date.now() });
+            document.getElementById('new-name').value = "";
         };
 
-        window.toggleCampaign = async (id, status) => {
-            await updateDoc(doc(db, "campaigns", id), { enabled: status });
+        window.toggleCamp = async (id, val) => {
+            await updateDoc(doc(db, "campaigns", id), { enabled: val });
         };
 
-        window.soloCampaign = async (id) => {
-            // This is a bit heavy, but works for a small list:
-            // In a production app, we'd use a batch, but here we'll just loop
-            const camps = document.querySelectorAll('.camp-row-data');
-            for(let c of camps) {
-                const cId = c.dataset.id;
-                await updateDoc(doc(db, "campaigns", cId), { enabled: (cId === id) });
+        window.soloMode = async (targetId) => {
+            const all = document.querySelectorAll('.camp-row');
+            for(let row of all) {
+                const id = row.dataset.id;
+                await updateDoc(doc(db, "campaigns", id), { enabled: id === targetId });
             }
         };
 
-        // Listen to Campaigns
-        onSnapshot(query(collection(db, "campaigns"), orderBy("order", "asc")), (snap) => {
-            const list = document.getElementById('campaign-list');
-            const filterBar = document.getElementById('player-filters');
-            list.innerHTML = "<h3>Existing Campaigns</h3>";
-            
-            // Update filter bar too
-            filterBar.innerHTML = `<button class="filter-btn ${currentFilter==='all'?'active':''}" onclick="setFilter('all')">All Players</button>`;
-
+        onSnapshot(collection(db, "campaigns"), (snap) => {
+            const container = document.getElementById('campaign-list-container');
+            container.innerHTML = "";
             snap.forEach(d => {
-                const camp = d.data();
-                const id = d.id;
-
-                // Add to list
-                const row = document.createElement('div');
-                row.className = 'campaign-item camp-row-data';
-                row.dataset.id = id;
-                row.innerHTML = `
-                    <strong>${camp.name}</strong>
-                    <div style="display:flex; align-items:center; gap:5px"><div class="color-preview" style="background:${camp.color}"></div> ${camp.color}</div>
-                    <span>${camp.image}</span>
-                    <label class="switch">
-                        <input type="checkbox" ${camp.enabled ? 'checked' : ''} onchange="toggleCampaign('${id}', this.checked)">
-                        <span class="slider"></span>
-                    </label>
-                    <button class="solo-btn" onclick="soloCampaign('${id}')">SOLO MODE</button>
-                    <button class="trash-btn" onclick="deleteCampaign('${id}')">🗑️</button>
+                const c = d.data();
+                const div = document.createElement('div');
+                div.className = "glass-card camp-row";
+                div.dataset.id = d.id;
+                div.style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:15px;";
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:15px">
+                        <div style="width:20px; height:20px; border-radius:50%; background:${c.color}"></div>
+                        <strong>${c.name}</strong>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button class="solo-btn" onclick="soloMode('${d.id}')" style="background:none; border:1px solid #fff; color:#fff; font-size:10px; cursor:pointer; padding:4px;">SOLO</button>
+                        <label class="switch">
+                            <input type="checkbox" ${c.enabled ? 'checked' : ''} onchange="toggleCamp('${d.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <button onclick="deleteDoc(doc(db, 'campaigns', '${d.id}'))" style="background:none; border:none; cursor:pointer;">🗑️</button>
+                    </div>
                 `;
-                list.appendChild(row);
-
-                // Add to player filters
-                const fBtn = document.createElement('button');
-                fBtn.className = `filter-btn ${currentFilter === camp.name ? 'active' : ''}`;
-                fBtn.innerText = camp.name;
-                fBtn.onclick = () => setFilter(camp.name);
-                filterBar.appendChild(fBtn);
+                container.appendChild(div);
             });
         });
-
-        window.deleteCampaign = async (id) => {
-            if(confirm("Delete this campaign forever?")) await deleteDoc(doc(db, "campaigns", id));
-        };
-
-        // --- PLAYER LOGIC (from previous) ---
-        window.setFilter = (val) => {
-            currentFilter = val;
-            renderList();
-        };
-
-        function renderList() {
-            onSnapshot(query(collection(db, "characters"), orderBy("createdAt", "desc")), (snapshot) => {
-                const grid = document.getElementById('master-character-list');
-                grid.innerHTML = ""; 
-                let lastSessionKey = "";
-
-                snapshot.forEach((charDoc) => {
-                    const data = charDoc.data();
-                    if (currentFilter === 'all' || data.campaign === currentFilter) {
-                        const date = data.createdAt?.toDate() || new Date();
-                        const sessionKey = `${date.toLocaleDateString()}`;
-                        if (sessionKey !== lastSessionKey) {
-                            const header = document.createElement('div');
-                            header.className = "session-header";
-                            header.innerHTML = `SESSION: ${sessionKey}`;
-                            grid.appendChild(header);
-                            lastSessionKey = sessionKey;
-                        }
-                        const card = document.createElement('div');
-                        card.className = "glass-card gm-char-card";
-                        card.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <div class="name-container">
-                                    <span class="name-text">${data.name}</span>
-                                </div>
-                                <button class="trash-btn" onclick="handleDelete('${charDoc.id}')">🗑️</button>
-                            </div>
-                            <div style="font-size:0.8rem; opacity:0.6">${data.campaign}</div>
-                        `;
-                        grid.appendChild(card);
-                    }
-                });
-            });
-        }
-        
-        window.handleDelete = async (id) => {
-            await deleteDoc(doc(db, "characters", id));
-        };
-
-        renderList();
     </script>
 </body>
 </html>

@@ -16,17 +16,13 @@
             <h1 id="main-title" class="glow-text">Which Story Are We Playing?</h1>
             
             <div class="carousel-wrapper">
-                <button class="nav-arrow left" onclick="scrollCarousel(-1)">&#10094;</button>
+                <button class="nav-arrow left" id="arrow-left" onclick="scrollCarousel(-1)">&#10094;</button>
                 
                 <div class="thirds-container" id="posters-container">
                     </div>
 
-                <button class="nav-arrow right" onclick="scrollCarousel(1)">&#10095;</button>
+                <button class="nav-arrow right" id="arrow-right" onclick="scrollCarousel(1)">&#10095;</button>
             </div>
-
-            <button id="resume-trigger" class="resume-btn" onclick="openResumeModal()" style="margin-top: 40px; position: relative; opacity: 1; transform: none; display:none">
-                Continuing another adventure?
-            </button>
         </section>
     </div>
 
@@ -46,34 +42,32 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        const container = document.getElementById('posters-container');
+
+        // Setup Device ID
         let deviceId = localStorage.getItem('device_uuid') || crypto.randomUUID();
         localStorage.setItem('device_uuid', deviceId);
         document.getElementById('uuid-display').innerText = deviceId.substring(0, 8);
 
-        const container = document.getElementById('posters-container');
-
-        // LOAD CAMPAIGNS (Client-side filtering to avoid Index Error)
+        // Fetch Campaigns
         onSnapshot(collection(db, "campaigns"), (snapshot) => {
             container.innerHTML = "";
             
-            // Convert to array, filter by enabled, and sort by 'order' locally
+            // Client-side Filter & Sort (No Index Needed!)
             const activeCampaigns = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(c => c.enabled === true)
                 .sort((a, b) => (a.order || 0) - (b.order || 0));
 
             if (activeCampaigns.length === 0) {
-                container.innerHTML = `<div style="width:100%; text-align:center; opacity:0.5; padding: 50px;">
-                    <p>No active campaigns found.</p>
-                    <p style="font-size:0.8rem">Activate them in the GM Terminal</p>
-                </div>`;
+                container.innerHTML = `<div style="width:100%; text-align:center; opacity:0.5; padding: 50px;">No active campaigns. Check GM Terminal.</div>`;
                 return;
             }
 
             activeCampaigns.forEach(camp => {
                 const card = document.createElement('div');
                 card.className = "poster-card";
-                card.style.flex = "0 0 300px";
+                card.style.flex = "0 0 300px"; 
                 card.innerHTML = `
                     <img src="${camp.image}" alt="${camp.name}">
                     <div class="poster-overlay"><h3>${camp.name}</h3></div>
@@ -81,55 +75,37 @@
                 card.onclick = () => {
                     localStorage.setItem('campaignColor', camp.color);
                     localStorage.setItem('currentCampaign', camp.name);
-                    
                     const flash = document.getElementById('color-flash');
                     flash.style.backgroundColor = camp.color;
                     flash.style.opacity = "1";
-                    
-                    setTimeout(() => {
-                        // This now routes to the specific signal page
-                        window.location.href = "create_signal.html"; 
-                    }, 420);
+                    setTimeout(() => { window.location.href = "create_signal.html"; }, 420);
                 };
                 container.appendChild(card);
             });
-            
             updateArrows();
         });
 
-        // CAROUSEL NAVIGATION
+        // Carousel Logic
         window.scrollCarousel = (dir) => {
-            const scrollAmount = 320; 
-            container.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+            container.scrollBy({ left: dir * 320, behavior: 'smooth' });
         };
 
         function updateArrows() {
-            const leftArrow = document.querySelector('.nav-arrow.left');
-            const rightArrow = document.querySelector('.nav-arrow.right');
-            
-            const checkScroll = () => {
-                leftArrow.style.display = container.scrollLeft > 20 ? "flex" : "none";
-                // Check if we can scroll more to the right
-                const maxScroll = container.scrollWidth - container.clientWidth;
-                rightArrow.style.display = container.scrollLeft < maxScroll - 20 ? "flex" : "none";
+            const left = document.getElementById('arrow-left');
+            const right = document.getElementById('arrow-right');
+            const check = () => {
+                left.style.display = container.scrollLeft > 20 ? "flex" : "none";
+                right.style.display = (container.scrollLeft + container.clientWidth < container.scrollWidth - 20) ? "flex" : "none";
             };
-
-            container.addEventListener('scroll', checkScroll);
-            // Initial check after content loads
-            setTimeout(checkScroll, 100);
+            container.addEventListener('scroll', check);
+            setTimeout(check, 150);
         }
 
-        // INTRO ANIMATION
+        // Simple Intro
         window.onload = () => {
-            const title = document.getElementById('main-title');
-            title.style.opacity = "1";
-            title.style.transform = "translate(-50%, -150px)"; // Moves title up
-            
-            setTimeout(() => {
-                document.querySelector('.carousel-wrapper').style.opacity = "1";
-            }, 600);
+            document.getElementById('main-title').style.opacity = "1";
+            setTimeout(() => { document.querySelector('.carousel-wrapper').style.opacity = "1"; }, 500);
         };
     </script>
-
 </body>
 </html>
