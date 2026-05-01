@@ -1,0 +1,67 @@
+/* ====================== CHARACTER CREATION ====================== */
+.creation-form {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.capture-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 2px dashed var(--glass-highlight);
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    transition: all 0.3s ease;
+}
+
+.capture-circle:hover {
+    border-style: solid;
+    background: rgba(255,255,255,0.05);
+}
+
+.class-cycler {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    margin-bottom: 24px;
+}
+
+.cycle-arrow {
+    background: transparent;
+    border: none;
+    color: var(--accent-glow);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.7;
+}
+
+.cycle-arrow:hover {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.class-display p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.class-display h3 {
+    margin: 4px 0 0;
+    font-size: 1.4rem;
+    color: white;
+}

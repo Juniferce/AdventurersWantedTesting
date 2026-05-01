@@ -1,0 +1,216 @@
+/* ====================== CAROUSEL & POSTERS ====================== */
+.carousel-wrapper {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 1400px;
+    padding: 0;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+.carousel-wrapper::before,
+.carousel-wrapper::after {
+    display: none !important;
+}
+
+.thirds-container {
+    display: flex;
+    gap: 40px; 
+    height: 50vh;
+    overflow-x: hidden; 
+    scroll-behavior: smooth;
+    align-items: center;
+    padding: 40px 0;
+    position: relative;
+    /* Perfect Centering math: 50% of container minus half the card width (160px) */
+    padding-left: calc(50% - 160px); 
+    padding-right: calc(50% - 160px);
+}
+
+/* NEW: When all cards fit on screen, this removes the scroll padding */
+.thirds-container.centered-mode {
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: center;
+    overflow-x: visible;
+}
+
+.thirds-container::-webkit-scrollbar {
+    display: none;
+}
+
+.poster-card {
+    height: 100%;
+    width: 320px; 
+    flex: 0 0 320px;
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease, box-shadow 0.3s ease;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    
+    /* Default state: Shrunk, dimmed, and UNCLICKABLE */
+    transform: scale(0.85); 
+    opacity: 0.4;
+    pointer-events: none; 
+}
+
+.poster-card.active-focus {
+    transform: scale(1.05); /* Scaled Up */
+    opacity: 1;
+    pointer-events: auto; /* ONLY this card is clickable */
+}
+
+/* Hover Outline (Color injected via JS based on campaign) */
+.poster-card.active-focus:hover {
+    box-shadow: 0 0 25px var(--campaign-color), 0 0 0 3px var(--campaign-color);
+}
+
+.poster-card img {
+    height: 100%;
+    width: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.poster-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 40px 20px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    box-sizing: border-box;
+    pointer-events: none;
+    text-align: center;
+}
+.poster-overlay h3 {
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+/* Ensure disabled states absolutely crush any hover/focus effects */
+.poster-card.disabled-poster {
+    filter: grayscale(1) brightness(0.4) !important;
+    opacity: 0.4 !important;
+    pointer-events: none !important;
+    transform: scale(0.85) !important;
+    box-shadow: none !important;
+    cursor: default !important;
+}
+
+.poster-card.clicked {
+    z-index: 50; 
+    transform: scale(1.08); 
+    border-color: var(--active-color);
+    box-shadow: 0 0 60vw 20vw var(--active-color);
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.6s ease-out !important;
+}
+
+/* Nav Arrows */
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    backdrop-filter: blur(5px);
+}
+
+.nav-arrow:hover { background: rgba(255,255,255,0.2); }
+.nav-arrow.left { left: 10px; }
+.nav-arrow.right { right: 10px; }
+
+/* ====================== RESUME BUTTON ====================== */
+/* Restored your exact button design, anchored safely to bottom */
+.resume-btn {
+    position: absolute;
+    bottom: 8vh; 
+    left: 50%;
+    transform: translate(-50%, 30px);
+    opacity: 0;
+    pointer-events: none;
+    padding: 16px 36px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: #e6e6e6;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    z-index: 100;
+}
+
+.resume-btn.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+}
+
+.resume-btn.visible:hover {
+    transform: translate(-50%, -2px);
+    background: #ffffff;
+}
+
+.character-list {
+    width: 100%;
+    max-height: 40vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 5px; 
+}
+
+.character-list::-webkit-scrollbar { width: 6px; }
+.character-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.resume-char-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--campaign-color, var(--glass-border));
+    padding: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.resume-char-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 12px var(--campaign-color, var(--accent-glow));
+    transform: translateX(4px);
+}
+
+.resume-arrow {
+    color: var(--campaign-color, var(--accent-glow));
+    font-size: 1.2rem;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.2s ease;
+}
+
+.resume-char-item:hover .resume-arrow {
+    opacity: 1;
+    transform: translateX(0);
+}

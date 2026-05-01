@@ -4,7 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TTRPG Companion</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Add this to the <style> tag at the top of index.html */
+        .centered-mode-mask {
+            mask-image: none !important;
+            -webkit-mask-image: none !important;
+        }
+        .carousel-mask {
+            position: relative;
+            width: 100%;
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        }
+    </style>
 </head>
 <body>
 
@@ -18,17 +32,34 @@
             <div class="carousel-wrapper">
                 <button class="nav-arrow left" id="arrow-left" onclick="scrollCarousel(-1)">&#10094;</button>
                 
-                <div class="thirds-container" id="posters-container">
-                    </div>
+                <div class="carousel-mask">
+                    <div class="thirds-container" id="posters-container">
+                        </div>
+                </div>
 
                 <button class="nav-arrow right" id="arrow-right" onclick="scrollCarousel(1)">&#10095;</button>
             </div>
+
+            <button id="resume-trigger" class="resume-btn" onclick="openResumeModal()">
+                Returning to an adventure?
+            </button>
         </section>
+    </div>
+
+    <div id="resume-modal" class="modal-overlay modal-closed">
+        <div class="glass-card modal-content">
+            <h2 class="glow-text" style="margin-bottom: 20px; font-size: 1.8rem;">Your Adventurers</h2>
+            <div id="character-list-container" class="character-list">
+                </div>
+            <button class="secondary-btn" onclick="closeResumeModal()" style="margin-top: 25px;">
+                Cancel
+            </button>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -41,70 +72,228 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
         const container = document.getElementById('posters-container');
+        const mask = document.querySelector('.carousel-mask');
 
-        // Setup Device ID
         let deviceId = localStorage.getItem('device_uuid') || crypto.randomUUID();
         localStorage.setItem('device_uuid', deviceId);
         document.getElementById('uuid-display').innerText = deviceId.substring(0, 8);
 
-        // Fetch Campaigns
+        // --- RETURNING PLAYER GLOBALS ---
+        let hasCharacters = false;
+        let introFinished = false;
+
+        window.openResumeModal = () => document.getElementById('resume-modal').classList.remove('modal-closed');
+        window.closeResumeModal = () => document.getElementById('resume-modal').classList.add('modal-closed');
+
+        async function loadExistingCharacters() {
+            const q = query(collection(db, "characters"), where("deviceId", "==", deviceId));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                hasCharacters = true;
+                const listContainer = document.getElementById('character-list-container');
+                listContainer.innerHTML = ""; 
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let campaignColor = "#ffffff";
+                    if (data.campaign === "Escape From Leviathan") campaignColor = "#00d0ff";
+                    else if (data.campaign === "The Signal From Space") campaignColor = "#00ff9d";
+                    else if (data.campaign === "The Treasure in Ervan's Keep") campaignColor = "#ff6b00";
+
+                    const charItem = document.createElement('div');
+                    charItem.className = 'resume-char-item';
+                    charItem.style.setProperty('--campaign-color', campaignColor); 
+                    charItem.innerHTML = `
+                        <div class="resume-char-info">
+                            <strong>${data.name}</strong> <span style="opacity: 0.6">| ${data.class}</span>
+                            <br><small>${data.campaign}</small>
+                        </div>
+                        <span class="resume-arrow">➔</span>
+                    `;
+                    
+                    charItem.addEventListener('click', () => {
+                        localStorage.setItem('currentCharacterId', doc.id);
+                        if (data.campaign === "The Signal From Space") {
+                            window.location.href = "character_signal.html";
+                        } else {
+                            alert(`The character sheet for "${data.campaign}" is not ready yet.`);
+                        }
+                    });
+                    listContainer.appendChild(charItem);
+                });
+
+                if (introFinished) {
+                    document.getElementById('resume-trigger').classList.add('visible');
+                }
+            }
+        }
+
+        // --- DYNAMIC CAROUSEL METRICS ---
+        const CARD_WIDTH = 320; 
+        const GAP = 40;
+
+        function alignCarousel(snapshotLength) {
+            // Calculate total pixel width of all posters + gaps
+            const totalWidth = (snapshotLength * CARD_WIDTH) + ((snapshotLength - 1) * GAP);
+            const arrows = document.querySelectorAll('.nav-arrow');
+
+            // If there's enough room on screen for everything (with a 40px buffer)
+            if (totalWidth <= container.clientWidth - 40) {
+                container.classList.add('centered-mode');
+                mask.classList.add('centered-mode-mask'); // Turn off blurry edges
+                arrows.forEach(a => a.style.display = "none");
+                
+                // Make all non-disabled cards active & clickable
+                document.querySelectorAll('.poster-card:not(.disabled-poster)').forEach(c => {
+                    c.classList.add('active-focus');
+                });
+            } else {
+                // Not enough room - switch to Carousel Mode
+                container.classList.remove('centered-mode');
+                mask.classList.remove('centered-mode-mask');
+
+                setTimeout(() => {
+                    if (snapshotLength > 1) {
+                        // Start on the second card 
+                        container.scrollLeft = (CARD_WIDTH + GAP);
+                    } else {
+                        container.scrollLeft = 0;
+                    }
+                    updateScale(); 
+                    updateArrows(); 
+                }, 100);
+            }
+        }
+
+        // --- SCROLL LOGIC ---
+        window.scrollCarousel = (dir) => {
+            const move = CARD_WIDTH + GAP;
+            container.scrollBy({ left: dir * move, behavior: 'smooth' });
+        };
+
+        const updateScale = () => {
+            // Don't mess with scale if we are in Grid mode
+            if (container.classList.contains('centered-mode')) return;
+
+            const cards = document.querySelectorAll('.poster-card');
+            if (cards.length === 0) return;
+
+            const centerIndex = Math.round(container.scrollLeft / (CARD_WIDTH + GAP));
+
+            cards.forEach((card, i) => {
+                if (i === centerIndex) {
+                    card.classList.add('active-focus');
+                } else {
+                    card.classList.remove('active-focus');
+                }
+            });
+        };
+
+        container.addEventListener('scroll', updateScale);
+        container.addEventListener('scroll', updateArrows);
+
+        container.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+        container.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+        // Update when the browser resizes (switches between Carousel and Grid dynamically)
+        window.addEventListener('resize', () => {
+            const cards = document.querySelectorAll('.poster-card');
+            if (cards.length > 0) alignCarousel(cards.length);
+        });
+
+        function updateArrows() {
+            if (container.classList.contains('centered-mode')) return;
+            
+            const left = document.getElementById('arrow-left');
+            const right = document.getElementById('arrow-right');
+            
+            left.style.display = container.scrollLeft > 5 ? "flex" : "none";
+            right.style.display = (container.scrollLeft + container.clientWidth < container.scrollWidth - 5) ? "flex" : "none";
+        }
+
+        // --- FETCH CAMPAIGNS ---
         onSnapshot(collection(db, "campaigns"), (snapshot) => {
             container.innerHTML = "";
             
-            // Client-side Filter & Sort (No Index Needed!)
-            const activeCampaigns = snapshot.docs
+            // Map ALL campaigns (so disabled ones still show up)
+            const allCampaigns = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(c => c.enabled === true)
                 .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-            if (activeCampaigns.length === 0) {
+            if (allCampaigns.length === 0) {
                 container.innerHTML = `<div style="width:100%; text-align:center; opacity:0.5; padding: 50px;">No active campaigns. Check GM Terminal.</div>`;
                 return;
             }
 
-            activeCampaigns.forEach(camp => {
+            allCampaigns.forEach(camp => {
                 const card = document.createElement('div');
                 card.className = "poster-card";
-                card.style.flex = "0 0 300px"; 
+                
+                // Add the disabled class if toggled off
+                if (camp.enabled === false) {
+                    card.classList.add('disabled-poster');
+                }
+
+                card.style.setProperty('--campaign-color', camp.color); 
                 card.innerHTML = `
-                    <img src="${camp.image}" alt="${camp.name}">
+                    <img src="${camp.image}" alt="${camp.name}" style="width:100%; height:100%; object-fit:cover;">
                     <div class="poster-overlay"><h3>${camp.name}</h3></div>
                 `;
+                
                 card.onclick = () => {
+                    if (camp.enabled === false) return; // Failsafe
+                    
                     localStorage.setItem('campaignColor', camp.color);
                     localStorage.setItem('currentCampaign', camp.name);
                     const flash = document.getElementById('color-flash');
                     flash.style.backgroundColor = camp.color;
                     flash.style.opacity = "1";
-                    setTimeout(() => { window.location.href = "create_signal.html"; }, 420);
+                    
+                    setTimeout(() => { 
+                        window.location.href = "create_signal.html"; 
+                    }, 420);
                 };
                 container.appendChild(card);
             });
-            updateArrows();
+            
+            alignCarousel(allCampaigns.length);
         });
 
-        // Carousel Logic
-        window.scrollCarousel = (dir) => {
-            container.scrollBy({ left: dir * 320, behavior: 'smooth' });
-        };
+        // --- INTRO / SKIP LOGIC ---
+        window.onload = async () => {
+            await loadExistingCharacters(); 
+            
+            const isReturning = localStorage.getItem('returningFromCharacter') === 'true';
+            const title = document.getElementById('main-title');
+            const wrapper = document.querySelector('.carousel-wrapper');
+            const resumeBtn = document.getElementById('resume-trigger');
 
-        function updateArrows() {
-            const left = document.getElementById('arrow-left');
-            const right = document.getElementById('arrow-right');
-            const check = () => {
-                left.style.display = container.scrollLeft > 20 ? "flex" : "none";
-                right.style.display = (container.scrollLeft + container.clientWidth < container.scrollWidth - 20) ? "flex" : "none";
-            };
-            container.addEventListener('scroll', check);
-            setTimeout(check, 150);
-        }
-
-        // Simple Intro
-        window.onload = () => {
-            document.getElementById('main-title').style.opacity = "1";
-            setTimeout(() => { document.querySelector('.carousel-wrapper').style.opacity = "1"; }, 500);
+            if (isReturning) {
+                title.style.transition = "none";
+                title.style.opacity = "1";
+                title.style.transform = "translate(-50%, -38vh)";
+                wrapper.style.transition = "none";
+                wrapper.style.opacity = "1";
+                
+                introFinished = true;
+                if (hasCharacters) resumeBtn.classList.add('visible');
+                localStorage.removeItem('returningFromCharacter');
+            } else {
+                setTimeout(() => {
+                    title.style.opacity = "1";
+                    title.style.transform = "translate(-50%, -38vh)"; 
+                }, 100);
+                setTimeout(() => {
+                    wrapper.style.opacity = "1";
+                    updateScale();
+                }, 600);
+                setTimeout(() => {
+                    introFinished = true;
+                    if (hasCharacters) resumeBtn.classList.add('visible');
+                }, 1500);
+            }
         };
     </script>
 </body>
