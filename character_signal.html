@@ -26,22 +26,33 @@
             <div class="glass-card character-sheet">
                 
                 <div class="profile-section">
-                    <div id="char-avatar" class="profile-avatar">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 id="char-name" style="margin: 0; font-size: 2rem;">Loading...</h2>
-                        <p id="char-class" style="margin: 5px 0 0; color: var(--accent-glow); text-transform: uppercase; letter-spacing: 1px;">-</p>
-                    </div>
-                </div>
-
-                <div class="hits-section">
-                    <h3 style="margin: 0 0 10px 0; font-weight: 300; letter-spacing: 2px;">SYSTEM INTEGRITY (HITS)</h3>
-                    <div class="hit-circles" id="hit-tracker">
+                    
+                    <div class="profile-info-left">
+                        <div id="char-avatar" class="profile-avatar">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
                         </div>
+                        <div>
+                            <h2 id="char-name" style="margin: 0; font-size: 2rem;">Loading...</h2>
+                            <p id="char-class" style="margin: 5px 0 0; color: var(--accent-glow); text-transform: uppercase; letter-spacing: 1px;">-</p>
+                        </div>
+                    </div>
+
+                    <div class="meters-container">
+                        <div class="meter-row">
+                            <span class="meter-label">OXYGEN</span>
+                            <div class="meter-bar" id="oxygen-tracker">
+                                </div>
+                        </div>
+                        <div class="meter-row">
+                            <span class="meter-label">INTEGRITY</span>
+                            <div class="meter-bar" id="integrity-tracker">
+                                </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="stats-grid">
@@ -120,14 +131,14 @@
                 document.getElementById('char-name').innerText = data.name;
                 document.getElementById('char-class').innerText = data.class;
 
-                // Handle the image (if it's not nil, replace the SVG icon with the picture)
+                // Handle the image
                 if (data.image && data.image !== "nil") {
                     const avatar = document.getElementById('char-avatar');
                     avatar.innerHTML = ""; 
                     avatar.style.backgroundImage = `url(${data.image})`;
                 }
 
-                // Render Stats (With fallbacks just in case old characters are loaded)
+                // Render Stats 
                 const stats = data.stats || { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 };
                 document.getElementById('stat-str').innerText = stats.strength;
                 document.getElementById('stat-dex').innerText = stats.dexterity;
@@ -136,19 +147,28 @@
                 document.getElementById('stat-wis').innerText = stats.wisdom;
                 document.getElementById('stat-cha').innerText = stats.charisma;
 
-                // Render Hits
-                const hits = data.hits || { current: 3, max: 3 };
-                const tracker = document.getElementById('hit-tracker');
-                tracker.innerHTML = ""; // Clear existing
-                
-                for (let i = 0; i < hits.max; i++) {
-                    const circle = document.createElement('div');
-                    circle.className = 'hit-circle';
-                    if (i < hits.current) {
-                        circle.classList.add('filled');
-                    }
-                    tracker.appendChild(circle);
+                // Render Oxygen Meter
+                const oxygen = data.oxygen || { current: 3, max: 3 };
+                const oxTracker = document.getElementById('oxygen-tracker');
+                oxTracker.innerHTML = ""; 
+                for (let i = 0; i < oxygen.max; i++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'meter-segment';
+                    if (i < oxygen.current) seg.classList.add('filled');
+                    oxTracker.appendChild(seg);
                 }
+
+                // Render Integrity Meter
+                const integrity = data.integrity || { current: 3, max: 3 };
+                const intTracker = document.getElementById('integrity-tracker');
+                intTracker.innerHTML = ""; 
+                for (let i = 0; i < integrity.max; i++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'meter-segment';
+                    if (i < integrity.current) seg.classList.add('filled');
+                    intTracker.appendChild(seg);
+                }
+
             } else {
                 alert("Character has been deleted.");
                 window.location.href = "index.html";

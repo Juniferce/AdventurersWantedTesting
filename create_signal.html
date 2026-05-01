@@ -120,7 +120,7 @@
             btn.disabled = true;
 
             try {
-                // Initialize default stats, hits, and nil image
+                // Initialize default stats, oxygen, integrity, and nil image
                 await addDoc(collection(db, "characters"), {
                     name: name,
                     class: document.getElementById('current-class').innerText,
@@ -135,7 +135,11 @@
                         wisdom: 10,
                         charisma: 10
                     },
-                    hits: {
+                    oxygen: {
+                        current: 3,
+                        max: 3
+                    },
+                    integrity: {
                         current: 3,
                         max: 3
                     },
