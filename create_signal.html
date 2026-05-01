@@ -57,7 +57,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
+        // Check the URL for an ID first. If it's not there, fall back to local storage.
+        const urlParams = new URLSearchParams(window.location.search);
+        const characterId = urlParams.get('id') || localStorage.getItem('currentCharacterId');
+        
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
             authDomain: "bnm-adventurers-wanted.firebaseapp.com",
@@ -122,7 +125,8 @@
 
             try {
                 // Initialize default stats, oxygen, integrity, and nil image
-                await addDoc(collection(db, "characters"), {
+                // Captured as a variable so we have the ID for the redirect!
+                const newCharRef = await addDoc(collection(db, "characters"), {
                     name: name,
                     class: document.getElementById('current-class').innerText,
                     campaign: "The Signal From Space",
@@ -147,8 +151,30 @@
                     createdAt: serverTimestamp()
                 });
 
+                // Set up local storage for the smooth transition
+                // Set up local storage for the smooth transition
                 localStorage.setItem('returningFromCharacter', 'true');
-                window.location.href = "character_signal.html?id=" + newCharRef.id;
+                localStorage.setItem('campaignColor', '#00ff9d');
+                localStorage.setItem('currentCampaign', 'The Signal From Space');
+
+                // ADD THIS LINE (Replace 'currentCharacterId' with whatever key your app actually uses)
+                localStorage.setItem('currentCharacterId', newCharRef.id);
+
+                // Trigger the exit flash animation
+                const flash = document.getElementById('intro-flash');
+                if (flash) {
+                    flash.style.backgroundColor = '#00ff9d';
+                    flash.style.opacity = "1";
+                    
+                    // Redirect with the character ID attached to the URL
+                    setTimeout(() => { 
+                        window.location.href = "character_signal.html?id=" + newCharRef.id; 
+                    }, 420);
+                } else {
+                    // Fallback just in case
+                    window.location.href = "character_signal.html?id=" + newCharRef.id;
+                }
+
             } catch (error) {
                 console.error(error);
                 alert("Failed to save character");

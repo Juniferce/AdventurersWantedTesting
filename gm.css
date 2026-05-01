@@ -413,3 +413,112 @@ input:checked + .slider:before {
     border-color: white;
     transform: translateY(-2px);
 }
+
+/* ====================== CAMPAIGN GRID ====================== */
+.campaigns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.campaign-card {
+    background: var(--glass-bg);
+    border: 2px solid var(--camp-color, var(--glass-border));
+    border-radius: 16px;
+    overflow: hidden; /* This makes the image perfectly hug the top corners! */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.campaign-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px var(--camp-color, rgba(0,0,0,0.4));
+}
+
+.camp-poster-container {
+    width: 100%;
+    height: 200px;
+    position: relative;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+}
+
+.camp-poster-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.camp-poster-container:hover img {
+    transform: scale(1.05);
+}
+
+.camp-poster-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: white;
+}
+
+.camp-poster-container:hover .camp-poster-overlay {
+    opacity: 1;
+}
+
+.camp-info-box {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.camp-header-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.camp-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.camp-controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Class List Items in the Modal */
+.class-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.05);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+}

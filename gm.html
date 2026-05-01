@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="gm.css">
     <style>
-        /* Clean native color picker */
         input[type="color"] {
             -webkit-appearance: none;
             border: none;
@@ -18,15 +17,11 @@
             padding: 0;
             background: none;
             box-shadow: 0 0 10px rgba(255,255,255,0.1);
+            flex-shrink: 0;
         }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; }
-        
-        /* Stop text selection while dragging cards */
-        .gm-char-card {
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        .gm-char-card { user-select: none; -webkit-user-select: none; }
     </style>
 </head>
 <body>
@@ -53,8 +48,8 @@
         </div>
 
         <div id="tab-campaigns" class="tab-content hidden">
-            <div id="campaigns-container" class="settings-panel">
-                <div style="text-align: center; opacity: 0.5;">Loading Campaigns...</div>
+            <div id="campaigns-container" class="campaigns-grid">
+                <div style="text-align: center; opacity: 0.5; grid-column: 1 / -1;">Loading Campaigns...</div>
             </div>
         </div>
     </div>
@@ -62,18 +57,32 @@
     <div id="char-edit-modal" class="modal-overlay modal-closed">
         <div class="glass-card modal-content">
             <h2 class="glow-text" style="margin-bottom: 20px; font-size: 1.8rem;">Edit Adventurer</h2>
-
             <label style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 5px; display: block;">Character Name</label>
             <input type="text" id="edit-char-name" class="sleek-input">
-
             <label style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 5px; display: block;">Class / Role</label>
             <input type="text" id="edit-char-class" class="sleek-input">
-
             <div style="display: flex; gap: 15px; margin-top: 20px;">
                 <button id="save-char-btn" class="primary-btn" style="flex: 1;">Save Changes</button>
                 <button id="delete-char-btn" class="trash-btn" style="padding: 0 20px; font-size: 1.2rem;" title="Delete Character">🗑️</button>
             </div>
             <button class="secondary-btn" onclick="closeCharEditModal()" style="margin-top: 15px;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="camp-classes-modal" class="modal-overlay modal-closed">
+        <div class="glass-card modal-content">
+            <h2 class="glow-text" style="margin-bottom: 10px; font-size: 1.6rem;" id="classes-camp-title">Edit Classes</h2>
+            <p style="text-align: center; opacity: 0.6; margin-top: 0; margin-bottom: 20px;">These are the options players can choose from during character creation.</p>
+            
+            <div id="classes-list-container" class="character-list" style="margin-bottom: 20px; max-height: 250px;">
+                </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="new-class-input" class="sleek-input" style="margin: 0;" placeholder="New Class Name...">
+                <button id="add-class-btn" class="primary-btn" style="width: auto; padding: 12px 20px;">Add</button>
+            </div>
+
+            <button class="secondary-btn" onclick="closeCampClassesModal()">Done</button>
         </div>
     </div>
 
@@ -101,7 +110,6 @@
         window.switchTab = (tabName) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
@@ -120,84 +128,102 @@
             renderGroups();
             renderCampaigns();
         });
-
         onSnapshot(collection(db, "groups"), (snap) => {
             liveGroups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderGroups();
         });
-
         onSnapshot(collection(db, "characters"), async (snap) => {
             liveCharacters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             await reconcileAutoGroups();
             renderGroups();
         });
 
-        // --- CHARACTER EDIT MODAL LOGIC ---
-        let editingCharId = null;
+        // ==========================================
+        //         CAMPAIGN CLASSES LOGIC
+        // ==========================================
+        let editingCampIdForClasses = null;
 
-        window.closeCharEditModal = () => {
-            document.getElementById('char-edit-modal').classList.add('modal-closed');
-            editingCharId = null;
+        window.openCampClassesModal = (campId) => {
+            editingCampIdForClasses = campId;
+            document.getElementById('camp-classes-modal').classList.remove('modal-closed');
+            renderClassesList();
         };
 
-        window.openCharEditModal = (charId) => {
-            const char = liveCharacters.find(c => c.id === charId);
-            if (!char) return;
-
-            editingCharId = charId;
-            document.getElementById('edit-char-name').value = char.name || "";
-            document.getElementById('edit-char-class').value = char.class || "";
-
-            // Reset the trash button so it's not armed from a previous opening
-            const delBtn = document.getElementById('delete-char-btn');
-            delBtn.classList.remove('armed');
-            delBtn.innerHTML = "🗑️";
-
-            document.getElementById('char-edit-modal').classList.remove('modal-closed');
+        window.closeCampClassesModal = () => {
+            document.getElementById('camp-classes-modal').classList.add('modal-closed');
+            editingCampIdForClasses = null;
         };
 
-        document.getElementById('save-char-btn').onclick = async () => {
-            if (!editingCharId) return;
-            const newName = document.getElementById('edit-char-name').value.trim();
-            const newClass = document.getElementById('edit-char-class').value.trim();
+        function renderClassesList() {
+            if (!editingCampIdForClasses) return;
+            const camp = liveCampaigns.find(c => c.id === editingCampIdForClasses);
+            if (!camp) return;
 
-            if (newName) {
-                await updateDoc(doc(db, "characters", editingCharId), {
-                    name: newName,
-                    class: newClass
-                });
-                window.closeCharEditModal();
-            }
-        };
+            document.getElementById('classes-camp-title').innerText = `Classes: ${camp.name}`;
+            const listContainer = document.getElementById('classes-list-container');
+            listContainer.innerHTML = "";
 
-        document.getElementById('delete-char-btn').onclick = async (e) => {
-            if (!editingCharId) return;
-            const btn = e.target;
-            
-            // Armed Delete Logic
-            if (!btn.classList.contains('armed')) {
-                btn.classList.add('armed');
-                btn.innerHTML = "Confirm?";
-                setTimeout(() => {
-                    if (btn) {
-                        btn.classList.remove('armed');
-                        btn.innerHTML = "🗑️";
-                    }
-                }, 3000);
+            const classes = camp.classes || [];
+
+            if (classes.length === 0) {
+                listContainer.innerHTML = `<div style="text-align:center; opacity:0.5; padding: 20px;">No classes added yet.</div>`;
             } else {
-                await deleteDoc(doc(db, "characters", editingCharId));
-                window.closeCharEditModal();
+                classes.forEach((cls, index) => {
+                    const item = document.createElement('div');
+                    item.className = "class-item";
+                    item.innerHTML = `
+                        <strong style="font-size: 1.1rem;">${cls}</strong>
+                        <button class="icon-btn" style="color: #ff4d4d; opacity: 0.8;" title="Remove Class">✖</button>
+                    `;
+                    // Delete class logic
+                    item.querySelector('button').onclick = async () => {
+                        const newClasses = [...classes];
+                        newClasses.splice(index, 1);
+                        await updateDoc(doc(db, "campaigns", camp.id), { classes: newClasses });
+                        // We call render manually here because the snapshot might take a split second
+                        renderClassesList(); 
+                    };
+                    listContainer.appendChild(item);
+                });
+            }
+        }
+
+        document.getElementById('add-class-btn').onclick = async () => {
+            if (!editingCampIdForClasses) return;
+            const input = document.getElementById('new-class-input');
+            const newClass = input.value.trim();
+            if (!newClass) return;
+
+            const camp = liveCampaigns.find(c => c.id === editingCampIdForClasses);
+            const currentClasses = camp.classes || [];
+            
+            if (!currentClasses.includes(newClass)) {
+                const updatedClasses = [...currentClasses, newClass];
+                await updateDoc(doc(db, "campaigns", camp.id), { classes: updatedClasses });
+                input.value = "";
+                renderClassesList();
+            } else {
+                alert("This class already exists!");
             }
         };
 
-        // --- CAMPAIGNS TAB LOGIC ---
+        // Add class on pressing Enter
+        document.getElementById('new-class-input').onkeydown = (e) => {
+            if (e.key === 'Enter') document.getElementById('add-class-btn').click();
+        };
+
+
+        // ==========================================
+        //         CAMPAIGNS TAB LOGIC
+        // ==========================================
         document.getElementById('add-campaign-btn').onclick = async () => {
             await addDoc(collection(db, "campaigns"), {
                 name: "New Adventure",
                 color: "#ffffff",
                 enabled: false,
                 image: "https://via.placeholder.com/320x480?text=Poster",
-                order: liveCampaigns.length
+                order: liveCampaigns.length,
+                classes: [] // Set up the empty array by default
             });
         };
 
@@ -208,26 +234,35 @@
             const sortedCamps = [...liveCampaigns].sort((a,b) => (a.order || 0) - (b.order || 0));
 
             sortedCamps.forEach(camp => {
-                const row = document.createElement('div');
-                row.className = "setting-row";
-                row.style.borderLeft = `4px solid ${camp.color || '#fff'}`;
+                const card = document.createElement('div');
+                card.className = "campaign-card";
+                card.style.setProperty('--camp-color', camp.color || '#fff');
 
-                const infoDiv = document.createElement('div');
-                infoDiv.style.display = "flex";
-                infoDiv.style.alignItems = "center";
-                infoDiv.style.gap = "15px";
-                infoDiv.style.flexGrow = "1";
+                // Poster Top Half (Clickable for Classes)
+                const posterContainer = document.createElement('div');
+                posterContainer.className = "camp-poster-container";
+                posterContainer.onclick = () => openCampClassesModal(camp.id);
+                posterContainer.innerHTML = `
+                    <img src="${camp.image}" alt="Poster">
+                    <div class="camp-poster-overlay">Edit Classes</div>
+                `;
+
+                // Info Bottom Half
+                const infoBox = document.createElement('div');
+                infoBox.className = "camp-info-box";
+
+                // Title Row
+                const titleRow = document.createElement('div');
+                titleRow.className = "camp-header-row";
 
                 const colorPicker = document.createElement('input');
                 colorPicker.type = "color";
                 colorPicker.value = camp.color || "#ffffff";
                 colorPicker.title = "Change Theme Color";
-                colorPicker.onchange = async (e) => {
-                    await updateDoc(doc(db, "campaigns", camp.id), { color: e.target.value });
-                };
+                colorPicker.onchange = async (e) => await updateDoc(doc(db, "campaigns", camp.id), { color: e.target.value });
 
                 const titleText = document.createElement('div');
-                titleText.className = "setting-label";
+                titleText.className = "camp-title";
                 titleText.innerText = camp.name;
 
                 const editBtn = document.createElement('button');
@@ -236,40 +271,36 @@
                 editBtn.onclick = () => {
                     const input = document.createElement('input');
                     input.className = "group-name-input"; 
+                    input.style.width = "100%";
                     input.value = camp.name;
                     
                     const saveName = async () => {
                         if (input.value.trim() !== "" && input.value !== camp.name) {
                             await updateDoc(doc(db, "campaigns", camp.id), { name: input.value.trim() });
-                        } else {
-                            renderCampaigns(); 
-                        }
+                        } else renderCampaigns(); 
                     };
 
                     input.onblur = saveName;
                     input.onkeydown = (e) => { if (e.key === 'Enter') saveName(); };
 
-                    infoDiv.replaceChild(input, titleText);
+                    titleRow.replaceChild(input, titleText);
                     input.focus();
                 };
 
-                infoDiv.appendChild(colorPicker);
-                infoDiv.appendChild(titleText);
-                infoDiv.appendChild(editBtn);
+                titleRow.appendChild(colorPicker);
+                titleRow.appendChild(titleText);
+                titleRow.appendChild(editBtn);
 
-                const controls = document.createElement('div');
-                controls.style.display = "flex";
-                controls.style.alignItems = "center";
-                controls.style.gap = "20px";
+                // Controls Row (Toggle & Trash)
+                const controlsRow = document.createElement('div');
+                controlsRow.className = "camp-controls-row";
 
                 const toggleLabel = document.createElement('label');
                 toggleLabel.className = "switch";
                 const toggleInput = document.createElement('input');
                 toggleInput.type = "checkbox";
                 toggleInput.checked = camp.enabled !== false;
-                toggleInput.onchange = async (e) => {
-                    await updateDoc(doc(db, "campaigns", camp.id), { enabled: e.target.checked });
-                };
+                toggleInput.onchange = async (e) => await updateDoc(doc(db, "campaigns", camp.id), { enabled: e.target.checked });
                 const slider = document.createElement('span');
                 slider.className = "slider";
                 toggleLabel.appendChild(toggleInput);
@@ -293,23 +324,79 @@
                     }
                 };
 
-                controls.appendChild(toggleLabel);
-                controls.appendChild(deleteBtn);
+                controlsRow.appendChild(toggleLabel);
+                controlsRow.appendChild(deleteBtn);
 
-                row.appendChild(infoDiv);
-                row.appendChild(controls);
-                container.appendChild(row);
+                infoBox.appendChild(titleRow);
+                infoBox.appendChild(controlsRow);
+
+                card.appendChild(posterContainer);
+                card.appendChild(infoBox);
+
+                container.appendChild(card);
             });
         }
 
-        // --- GROUPS TAB LOGIC ---
+        // ==========================================
+        //         CHARACTER EDIT LOGIC
+        // ==========================================
+        let editingCharId = null;
+
+        window.closeCharEditModal = () => {
+            document.getElementById('char-edit-modal').classList.add('modal-closed');
+            editingCharId = null;
+        };
+
+        window.openCharEditModal = (charId) => {
+            const char = liveCharacters.find(c => c.id === charId);
+            if (!char) return;
+            editingCharId = charId;
+            document.getElementById('edit-char-name').value = char.name || "";
+            document.getElementById('edit-char-class').value = char.class || "";
+
+            const delBtn = document.getElementById('delete-char-btn');
+            delBtn.classList.remove('armed');
+            delBtn.innerHTML = "🗑️";
+
+            document.getElementById('char-edit-modal').classList.remove('modal-closed');
+        };
+
+        document.getElementById('save-char-btn').onclick = async () => {
+            if (!editingCharId) return;
+            const newName = document.getElementById('edit-char-name').value.trim();
+            const newClass = document.getElementById('edit-char-class').value.trim();
+            if (newName) {
+                await updateDoc(doc(db, "characters", editingCharId), { name: newName, class: newClass });
+                window.closeCharEditModal();
+            }
+        };
+
+        document.getElementById('delete-char-btn').onclick = async (e) => {
+            if (!editingCharId) return;
+            const btn = e.target;
+            if (!btn.classList.contains('armed')) {
+                btn.classList.add('armed');
+                btn.innerHTML = "Confirm?";
+                setTimeout(() => {
+                    if (btn) {
+                        btn.classList.remove('armed');
+                        btn.innerHTML = "🗑️";
+                    }
+                }, 3000);
+            } else {
+                await deleteDoc(doc(db, "characters", editingCharId));
+                window.closeCharEditModal();
+            }
+        };
+
+        // ==========================================
+        //         GROUPS TAB LOGIC
+        // ==========================================
         async function reconcileAutoGroups() {
             const twoHoursMs = 2 * 60 * 60 * 1000;
-
             for (let char of liveCharacters) {
                 if (!char.groupId) {
                     let charTime = char.createdAt ? (char.createdAt.toMillis ? char.createdAt.toMillis() : char.createdAt) : Date.now();
-                    
                     let matchedGroup = liveGroups.find(g => {
                         let gTime = g.createdAt ? (g.createdAt.toMillis ? g.createdAt.toMillis() : g.createdAt) : 0;
                         return Math.abs(charTime - gTime) <= twoHoursMs && g.campaign === char.campaign;
@@ -320,14 +407,12 @@
                     } else {
                         const campData = liveCampaigns.find(c => c.name === char.campaign);
                         const groupColor = campData ? campData.color : "#ffffff";
-
                         const newGroupRef = await addDoc(collection(db, "groups"), {
                             name: `Group ${liveGroups.length + 1}`,
                             createdAt: char.createdAt || Timestamp.now(),
                             campaign: char.campaign,
                             color: groupColor
                         });
-                        
                         liveGroups.push({ id: newGroupRef.id, name: `Group ${liveGroups.length + 1}`, createdAt: charTime, campaign: char.campaign, color: groupColor });
                         await updateDoc(doc(db, "characters", char.id), { groupId: newGroupRef.id });
                     }
@@ -347,7 +432,6 @@
         function renderGroups() {
             const container = document.getElementById('groups-container');
             container.innerHTML = "";
-
             if (liveGroups.length === 0) {
                 container.innerHTML = `<div style="text-align: center; opacity: 0.5;">No groups formed yet.</div>`;
                 return;
@@ -368,11 +452,7 @@
                 const syncColor = campData ? campData.color : group.color;
                 groupEl.style.setProperty('--group-color', syncColor);
 
-                // Drag & Drop
-                groupEl.addEventListener('dragover', (e) => {
-                    e.preventDefault(); 
-                    groupEl.classList.add('drag-over');
-                });
+                groupEl.addEventListener('dragover', (e) => { e.preventDefault(); groupEl.classList.add('drag-over'); });
                 groupEl.addEventListener('dragleave', () => groupEl.classList.remove('drag-over'));
                 groupEl.addEventListener('drop', async (e) => {
                     e.preventDefault();
@@ -381,109 +461,71 @@
                     if (charId) await updateDoc(doc(db, "characters", charId), { groupId: group.id });
                 });
 
-                // Header
                 const header = document.createElement('div');
                 header.className = "group-header";
                 
                 const titleBlock = document.createElement('div');
-                titleBlock.style.display = "flex";
-                titleBlock.style.alignItems = "center";
-                titleBlock.style.gap = "10px";
-                titleBlock.style.flexGrow = "1";
+                titleBlock.style.display = "flex"; titleBlock.style.alignItems = "center"; titleBlock.style.gap = "10px"; titleBlock.style.flexGrow = "1";
 
                 const titleText = document.createElement('h2');
-                titleText.className = "group-title";
-                titleText.innerText = group.name;
+                titleText.className = "group-title"; titleText.innerText = group.name;
 
                 const editBtn = document.createElement('button');
-                editBtn.className = "icon-btn";
-                editBtn.innerHTML = "✎"; 
+                editBtn.className = "icon-btn"; editBtn.innerHTML = "✎"; 
                 editBtn.onclick = () => {
                     const input = document.createElement('input');
-                    input.className = "group-name-input";
-                    input.value = group.name;
-                    
+                    input.className = "group-name-input"; input.value = group.name;
                     const saveName = async () => {
-                        if (input.value.trim() !== "" && input.value !== group.name) {
-                            await updateDoc(doc(db, "groups", group.id), { name: input.value.trim() });
-                        } else renderGroups();
+                        if (input.value.trim() !== "" && input.value !== group.name) await updateDoc(doc(db, "groups", group.id), { name: input.value.trim() });
+                        else renderGroups();
                     };
-
-                    input.onblur = saveName;
-                    input.onkeydown = (e) => { if (e.key === 'Enter') saveName(); };
-
+                    input.onblur = saveName; input.onkeydown = (e) => { if (e.key === 'Enter') saveName(); };
                     titleBlock.replaceChild(input, titleText);
                     input.focus();
                 };
 
                 const deleteGroupBtn = document.createElement('button');
-                deleteGroupBtn.className = "icon-btn";
-                deleteGroupBtn.innerHTML = "🗑️";
-                deleteGroupBtn.title = "Delete empty group";
+                deleteGroupBtn.className = "icon-btn"; deleteGroupBtn.innerHTML = "🗑️"; deleteGroupBtn.title = "Delete empty group";
                 deleteGroupBtn.onclick = async () => {
                     const charsInGroup = liveCharacters.filter(c => c.groupId === group.id);
                     if (charsInGroup.length > 0) return alert("Move all players out of this group before deleting it!");
                     if (confirm(`Delete ${group.name}?`)) await deleteDoc(doc(db, "groups", group.id));
                 };
 
-                titleBlock.appendChild(titleText);
-                titleBlock.appendChild(editBtn);
-                header.appendChild(titleBlock);
-                header.appendChild(deleteGroupBtn);
+                titleBlock.appendChild(titleText); titleBlock.appendChild(editBtn);
+                header.appendChild(titleBlock); header.appendChild(deleteGroupBtn);
                 groupEl.appendChild(header);
 
-                // Grid
                 const grid = document.createElement('div');
                 grid.className = "group-grid";
 
                 const charsInGroup = liveCharacters.filter(c => c.groupId === group.id);
                 charsInGroup.forEach(char => {
                     const card = document.createElement('div');
-                    card.className = "gm-char-card";
-                    card.draggable = true;
-                    
+                    card.className = "gm-char-card"; card.draggable = true;
                     card.innerHTML = `
                         <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${char.name}</div>
                         <div style="font-size: 0.85rem; opacity: 0.6;">${char.class}</div>
                         <div style="font-size: 0.75rem; color: var(--accent-glow); margin-top: 10px;">${char.campaign}</div>
                     `;
 
-                    // Drag Events
                     card.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.effectAllowed = 'move';
-                        e.dataTransfer.setData('text/plain', char.id);
-
+                        e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', char.id);
                         const dragGhost = card.cloneNode(true);
-                        dragGhost.style.position = "absolute";
-                        dragGhost.style.top = "-1000px";
-                        dragGhost.style.transform = "scale(1.1) rotate(5deg)";
-                        dragGhost.style.boxShadow = "0 10px 20px rgba(0,0,0,0.5)";
-                        dragGhost.style.border = `1px solid ${syncColor}`;
+                        dragGhost.style.position = "absolute"; dragGhost.style.top = "-1000px"; dragGhost.style.transform = "scale(1.1) rotate(5deg)";
+                        dragGhost.style.boxShadow = "0 10px 20px rgba(0,0,0,0.5)"; dragGhost.style.border = `1px solid ${syncColor}`;
                         document.body.appendChild(dragGhost);
-                        
                         e.dataTransfer.setDragImage(dragGhost, dragGhost.offsetWidth / 2, dragGhost.offsetHeight / 2);
-                        setTimeout(() => {
-                            card.classList.add('ghost-state');
-                            dragGhost.remove();
-                        }, 0);
+                        setTimeout(() => { card.classList.add('ghost-state'); dragGhost.remove(); }, 0);
                     });
-                    
                     card.addEventListener('dragend', () => card.classList.remove('ghost-state'));
-
-                    // Click to Edit Event
-                    card.addEventListener('click', () => {
-                        window.openCharEditModal(char.id);
-                    });
+                    card.addEventListener('click', () => window.openCharEditModal(char.id));
 
                     grid.appendChild(card);
                 });
 
-                if (charsInGroup.length === 0) {
-                    grid.innerHTML = `<div style="opacity: 0.3; grid-column: 1 / -1; font-style: italic;">Empty Group. Drag players here.</div>`;
-                }
-
-                groupEl.appendChild(grid);
-                container.appendChild(groupEl);
+                if (charsInGroup.length === 0) grid.innerHTML = `<div style="opacity: 0.3; grid-column: 1 / -1; font-style: italic;">Empty Group. Drag players here.</div>`;
+                groupEl.appendChild(grid); container.appendChild(groupEl);
             });
         }
     </script>
