@@ -148,7 +148,7 @@
                 });
 
                 localStorage.setItem('returningFromCharacter', 'true');
-                window.location.href = "character_signal.html"; 
+                window.location.href = "character_signal.html?id=" + newCharRef.id;
             } catch (error) {
                 console.error(error);
                 alert("Failed to save character");
