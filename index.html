@@ -9,48 +9,30 @@
 <body>
 
     <div id="device-debug-id">ID: <span id="uuid-display">Generating...</span></div>
-
     <div id="color-flash" class="color-flash"></div>
 
     <div id="app-container">
         <section id="view-selection" class="view active">
             <h1 id="main-title" class="glow-text">Which Story Are We Playing?</h1>
             
-            <div class="thirds-container" id="posters-container">
-                <div class="poster-card pirates" data-color="#00d0ff" data-campaign="Escape From Leviathan">
-                    <img src="leviathan_poster.png" alt="Leviathan">
-                    <div class="poster-overlay"><h3>Pirates</h3></div>
-                </div>
-                <div class="poster-card space" data-color="#00ff9d" data-campaign="The Signal From Space">
-                    <img src="signal_poster.png" alt="Signal">
-                    <div class="poster-overlay"><h3>Astronauts</h3></div>
-                </div>
-                <div class="poster-card knights" data-color="#ff6b00" data-campaign="The Treasure in Ervan's Keep">
-                    <img src="ervan_poster.png" alt="Keep">
-                    <div class="poster-overlay"><h3>Knights</h3></div>
-                </div>
+            <div class="carousel-wrapper">
+                <button class="nav-arrow left" onclick="scrollCarousel(-1)">&#10094;</button>
+                
+                <div class="thirds-container" id="posters-container">
+                    </div>
+
+                <button class="nav-arrow right" onclick="scrollCarousel(1)">&#10095;</button>
             </div>
 
-            <button id="resume-trigger" class="resume-btn" onclick="openResumeModal()">
-                Returning to an adventure?
+            <button id="resume-trigger" class="resume-btn" onclick="openResumeModal()" style="margin-top: 40px; position: relative; opacity: 1; transform: none; display:none">
+                Continuing another adventure?
             </button>
         </section>
     </div>
 
-    <div id="resume-modal" class="modal-overlay modal-closed">
-        <div class="glass-card modal-content">
-            <h2 class="glow-text" style="margin-bottom: 20px; font-size: 1.8rem;">Your Adventurers</h2>
-            <div id="character-list-container" class="character-list">
-                </div>
-            <button class="secondary-btn" onclick="closeResumeModal()" style="margin-top: 25px;">
-                Cancel
-            </button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -68,154 +50,63 @@
         localStorage.setItem('device_uuid', deviceId);
         document.getElementById('uuid-display').innerText = deviceId.substring(0, 8);
 
-        const colorFlash = document.getElementById('color-flash');
+        const container = document.getElementById('posters-container');
 
-        const resumeModal = document.getElementById('resume-modal');
-
-        window.openResumeModal = () => resumeModal.classList.remove('modal-closed');
-        window.closeResumeModal = () => resumeModal.classList.add('modal-closed');
-
-        let hasCharacters = false;
-        let introFinished = false;
-
-        onSnapshot(doc(db, "settings", "campaigns"), (docSnap) => {
-            const settings = docSnap.exists() ? docSnap.data() : {};
-            
-            document.querySelectorAll('.poster-card').forEach(card => {
-                const campaign = card.dataset.campaign;
-                if (settings[campaign] === false) {
-                    card.classList.add('disabled-poster');
-                } else {
-                    card.classList.remove('disabled-poster');
-                }
+        // Load Dynamic Campaigns
+        const q = query(collection(db, "campaigns"), where("enabled", "==", true), orderBy("order", "asc"));
+        
+        onSnapshot(q, (snapshot) => {
+            container.innerHTML = "";
+            snapshot.forEach(doc => {
+                const camp = doc.data();
+                const card = document.createElement('div');
+                card.className = "poster-card";
+                card.style.flex = "0 0 300px"; // Fixed width for carousel
+                card.innerHTML = `
+                    <img src="${camp.image}" alt="${camp.name}">
+                    <div class="poster-overlay"><h3>${camp.name}</h3></div>
+                `;
+                card.onclick = () => {
+                    localStorage.setItem('campaignColor', camp.color);
+                    localStorage.setItem('currentCampaign', camp.name);
+                    
+                    document.getElementById('color-flash').style.backgroundColor = camp.color;
+                    document.getElementById('color-flash').style.opacity = "1";
+                    
+                    setTimeout(() => {
+                        window.location.href = "create_signal.html"; 
+                    }, 420);
+                };
+                container.appendChild(card);
             });
+            
+            // Logic to show/hide arrows based on content width
+            updateArrows();
         });
 
-        async function loadExistingCharacters() {
-            const q = query(collection(db, "characters"), where("deviceId", "==", deviceId));
-            const querySnapshot = await getDocs(q);
+        window.scrollCarousel = (dir) => {
+            const scrollAmount = 320; // Card width + gap
+            container.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+        };
 
-            if (!querySnapshot.empty) {
-                hasCharacters = true;
-                const listContainer = document.getElementById('character-list-container');
-                listContainer.innerHTML = ""; 
-
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    
-                    // Match the color to the campaign
-                    let campaignColor = "#ffffff";
-                    if (data.campaign === "Escape From Leviathan") campaignColor = "#00d0ff";
-                    else if (data.campaign === "The Signal From Space") campaignColor = "#00ff9d";
-                    else if (data.campaign === "The Treasure in Ervan's Keep") campaignColor = "#ff6b00";
-
-                    const charItem = document.createElement('div');
-                    charItem.className = 'resume-char-item';
-                    
-                    // Inject the color as a CSS variable for the outline and arrow!
-                    charItem.style.setProperty('--campaign-color', campaignColor);
-                    
-                    charItem.innerHTML = `
-                        <div class="resume-char-info">
-                            <strong>${data.name}</strong> <span style="opacity: 0.6">| ${data.class}</span>
-                            <br><small>${data.campaign}</small>
-                        </div>
-                        <span class="resume-arrow">➔</span>
-                    `;
-                    
-                    charItem.addEventListener('click', () => {
-                        localStorage.setItem('currentCharacterId', doc.id);
-                        if (data.campaign === "The Signal From Space") {
-                            window.location.href = "character_signal.html";
-                        } else {
-                            alert(`The character sheet for "${data.campaign}" is not ready yet.`);
-                        }
-                    });
-
-                    listContainer.appendChild(charItem);
-                });
-
-                if (introFinished) {
-                    document.getElementById('resume-trigger').classList.add('visible');
-                }
-            }
-        }
-
-        function selectCampaign(card) {
-            const color = card.dataset.color;
-            const campaign = card.dataset.campaign;
-
-            card.style.setProperty('--active-color', color);
-            card.classList.add('clicked');
+        function updateArrows() {
+            const leftArrow = document.querySelector('.nav-arrow.left');
+            const rightArrow = document.querySelector('.nav-arrow.right');
             
-            document.querySelectorAll('.poster-card').forEach(c => {
-                if (c !== card) c.style.opacity = '0.2';
-            });
-
-            setTimeout(() => {
-                colorFlash.style.backgroundColor = color;
-                colorFlash.style.opacity = "1";
-            }, 450); 
-
-            setTimeout(() => {
-                localStorage.setItem('campaignColor', color);   
-                if (campaign === "The Signal From Space") {
-                    window.location.href = "create_signal.html";
-                } else {
-                    alert(`"${campaign}" is not ready yet.`);
-                    colorFlash.style.opacity = "0";
-                    card.classList.remove('clicked');
-                    document.querySelectorAll('.poster-card').forEach(c => c.style.opacity = '1');
-                }
-            }, 1000); 
+            container.onscroll = () => {
+                leftArrow.style.display = container.scrollLeft > 10 ? "flex" : "none";
+                rightArrow.style.display = (container.scrollLeft + container.clientWidth < container.scrollWidth - 10) ? "flex" : "none";
+            };
         }
 
-        document.querySelectorAll('.poster-card').forEach(card => {
-            card.addEventListener('click', () => selectCampaign(card));
-        });
-
-        const isReturning = localStorage.getItem('returningFromCharacter') === 'true';
-
-        function startIntro() {
-            const title = document.getElementById('main-title');
-            const posters = document.getElementById('posters-container');
-            const resumeBtn = document.getElementById('resume-trigger');
-
-            if (isReturning) {
-                title.style.transition = "none";
-                posters.style.transition = "none";
-
-                title.style.opacity = "1";
-                title.style.top = "12%";
-                posters.style.opacity = "1";
-                posters.style.transform = "translateY(0)";
-                
-                introFinished = true;
-                if (hasCharacters) {
-                    resumeBtn.style.transition = "none"; 
-                    resumeBtn.classList.add('visible');
-                }
-                
-                localStorage.removeItem('returningFromCharacter');
-            } else {
-                setTimeout(() => title.style.opacity = "1", 400);
-                setTimeout(() => title.style.top = "12%", 1400);
-                
-                setTimeout(() => {
-                    posters.style.opacity = "1";
-                    posters.style.transform = "translateY(0)";
-                }, 2200);
-
-                setTimeout(() => {
-                    introFinished = true;
-                    if (hasCharacters) resumeBtn.classList.add('visible');
-                }, 3200);
-            }
-        }
-
+        // Animation logic
         window.onload = () => {
-            loadExistingCharacters();
-            startIntro();
+            const title = document.getElementById('main-title');
+            title.style.opacity = "1";
+            title.style.transform = "translateY(0)";
+            setTimeout(() => {
+                document.querySelector('.carousel-wrapper').style.opacity = "1";
+            }, 600);
         };
     </script>
 </body>
