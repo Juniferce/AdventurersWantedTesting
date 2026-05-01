@@ -50,7 +50,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -68,154 +68,84 @@
         localStorage.setItem('device_uuid', deviceId);
         document.getElementById('uuid-display').innerText = deviceId.substring(0, 8);
 
-        const colorFlash = document.getElementById('color-flash');
+        const container = document.getElementById('posters-container');
 
-        const resumeModal = document.getElementById('resume-modal');
-
-        window.openResumeModal = () => resumeModal.classList.remove('modal-closed');
-        window.closeResumeModal = () => resumeModal.classList.add('modal-closed');
-
-        let hasCharacters = false;
-        let introFinished = false;
-
-        onSnapshot(doc(db, "settings", "campaigns"), (docSnap) => {
-            const settings = docSnap.exists() ? docSnap.data() : {};
+        // LOAD CAMPAIGNS (Client-side filtering to avoid Index Error)
+        onSnapshot(collection(db, "campaigns"), (snapshot) => {
+            container.innerHTML = "";
             
-            document.querySelectorAll('.poster-card').forEach(card => {
-                const campaign = card.dataset.campaign;
-                if (settings[campaign] === false) {
-                    card.classList.add('disabled-poster');
-                } else {
-                    card.classList.remove('disabled-poster');
-                }
+            // Convert to array, filter by enabled, and sort by 'order' locally
+            const activeCampaigns = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(c => c.enabled === true)
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            if (activeCampaigns.length === 0) {
+                container.innerHTML = `<div style="width:100%; text-align:center; opacity:0.5; padding: 50px;">
+                    <p>No active campaigns found.</p>
+                    <p style="font-size:0.8rem">Activate them in the GM Terminal</p>
+                </div>`;
+                return;
+            }
+
+            activeCampaigns.forEach(camp => {
+                const card = document.createElement('div');
+                card.className = "poster-card";
+                card.style.flex = "0 0 300px";
+                card.innerHTML = `
+                    <img src="${camp.image}" alt="${camp.name}">
+                    <div class="poster-overlay"><h3>${camp.name}</h3></div>
+                `;
+                card.onclick = () => {
+                    localStorage.setItem('campaignColor', camp.color);
+                    localStorage.setItem('currentCampaign', camp.name);
+                    
+                    const flash = document.getElementById('color-flash');
+                    flash.style.backgroundColor = camp.color;
+                    flash.style.opacity = "1";
+                    
+                    setTimeout(() => {
+                        // This now routes to the specific signal page
+                        window.location.href = "create_signal.html"; 
+                    }, 420);
+                };
+                container.appendChild(card);
             });
+            
+            updateArrows();
         });
 
-        async function loadExistingCharacters() {
-            const q = query(collection(db, "characters"), where("deviceId", "==", deviceId));
-            const querySnapshot = await getDocs(q);
+        // CAROUSEL NAVIGATION
+        window.scrollCarousel = (dir) => {
+            const scrollAmount = 320; 
+            container.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+        };
 
-            if (!querySnapshot.empty) {
-                hasCharacters = true;
-                const listContainer = document.getElementById('character-list-container');
-                listContainer.innerHTML = ""; 
-
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    
-                    // Match the color to the campaign
-                    let campaignColor = "#ffffff";
-                    if (data.campaign === "Escape From Leviathan") campaignColor = "#00d0ff";
-                    else if (data.campaign === "The Signal From Space") campaignColor = "#00ff9d";
-                    else if (data.campaign === "The Treasure in Ervan's Keep") campaignColor = "#ff6b00";
-
-                    const charItem = document.createElement('div');
-                    charItem.className = 'resume-char-item';
-                    
-                    // Inject the color as a CSS variable for the outline and arrow!
-                    charItem.style.setProperty('--campaign-color', campaignColor);
-                    
-                    charItem.innerHTML = `
-                        <div class="resume-char-info">
-                            <strong>${data.name}</strong> <span style="opacity: 0.6">| ${data.class}</span>
-                            <br><small>${data.campaign}</small>
-                        </div>
-                        <span class="resume-arrow">➔</span>
-                    `;
-                    
-                    charItem.addEventListener('click', () => {
-                        localStorage.setItem('currentCharacterId', doc.id);
-                        if (data.campaign === "The Signal From Space") {
-                            window.location.href = "character_signal.html";
-                        } else {
-                            alert(`The character sheet for "${data.campaign}" is not ready yet.`);
-                        }
-                    });
-
-                    listContainer.appendChild(charItem);
-                });
-
-                if (introFinished) {
-                    document.getElementById('resume-trigger').classList.add('visible');
-                }
-            }
-        }
-
-        function selectCampaign(card) {
-            const color = card.dataset.color;
-            const campaign = card.dataset.campaign;
-
-            card.style.setProperty('--active-color', color);
-            card.classList.add('clicked');
+        function updateArrows() {
+            const leftArrow = document.querySelector('.nav-arrow.left');
+            const rightArrow = document.querySelector('.nav-arrow.right');
             
-            document.querySelectorAll('.poster-card').forEach(c => {
-                if (c !== card) c.style.opacity = '0.2';
-            });
+            const checkScroll = () => {
+                leftArrow.style.display = container.scrollLeft > 20 ? "flex" : "none";
+                // Check if we can scroll more to the right
+                const maxScroll = container.scrollWidth - container.clientWidth;
+                rightArrow.style.display = container.scrollLeft < maxScroll - 20 ? "flex" : "none";
+            };
 
-            setTimeout(() => {
-                colorFlash.style.backgroundColor = color;
-                colorFlash.style.opacity = "1";
-            }, 450); 
-
-            setTimeout(() => {
-                localStorage.setItem('campaignColor', color);   
-                if (campaign === "The Signal From Space") {
-                    window.location.href = "create_signal.html";
-                } else {
-                    alert(`"${campaign}" is not ready yet.`);
-                    colorFlash.style.opacity = "0";
-                    card.classList.remove('clicked');
-                    document.querySelectorAll('.poster-card').forEach(c => c.style.opacity = '1');
-                }
-            }, 1000); 
+            container.addEventListener('scroll', checkScroll);
+            // Initial check after content loads
+            setTimeout(checkScroll, 100);
         }
 
-        document.querySelectorAll('.poster-card').forEach(card => {
-            card.addEventListener('click', () => selectCampaign(card));
-        });
-
-        const isReturning = localStorage.getItem('returningFromCharacter') === 'true';
-
-        function startIntro() {
-            const title = document.getElementById('main-title');
-            const posters = document.getElementById('posters-container');
-            const resumeBtn = document.getElementById('resume-trigger');
-
-            if (isReturning) {
-                title.style.transition = "none";
-                posters.style.transition = "none";
-
-                title.style.opacity = "1";
-                title.style.top = "12%";
-                posters.style.opacity = "1";
-                posters.style.transform = "translateY(0)";
-                
-                introFinished = true;
-                if (hasCharacters) {
-                    resumeBtn.style.transition = "none"; 
-                    resumeBtn.classList.add('visible');
-                }
-                
-                localStorage.removeItem('returningFromCharacter');
-            } else {
-                setTimeout(() => title.style.opacity = "1", 400);
-                setTimeout(() => title.style.top = "12%", 1400);
-                
-                setTimeout(() => {
-                    posters.style.opacity = "1";
-                    posters.style.transform = "translateY(0)";
-                }, 2200);
-
-                setTimeout(() => {
-                    introFinished = true;
-                    if (hasCharacters) resumeBtn.classList.add('visible');
-                }, 3200);
-            }
-        }
-
+        // INTRO ANIMATION
         window.onload = () => {
-            loadExistingCharacters();
-            startIntro();
+            const title = document.getElementById('main-title');
+            title.style.opacity = "1";
+            title.style.transform = "translate(-50%, -150px)"; // Moves title up
+            
+            setTimeout(() => {
+                document.querySelector('.carousel-wrapper').style.opacity = "1";
+            }, 600);
         };
     </script>
 </body>
