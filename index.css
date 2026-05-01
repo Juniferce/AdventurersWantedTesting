@@ -1,3 +1,24 @@
+/* ADD THIS TO THE VERY TOP OF index.css */
+:root {
+    --card-width: 320px;
+    --card-gap: 40px;
+}
+
+@media (max-width: 768px) {
+    :root {
+        --card-width: 260px;
+        --card-gap: 20px;
+    }
+    .resume-btn { width: 85%; font-size: 1rem; bottom: 4vh; }
+}
+
+/* NEW: Mobile devices don't have mice, so automatically apply the glow! */
+@media (hover: none) {
+    .poster-card.active-focus:not(.disabled-poster) {
+        box-shadow: 0 0 25px var(--campaign-color), 0 0 0 3px var(--campaign-color);
+    }
+}
+
 /* ====================== CAROUSEL & POSTERS ====================== */
 .carousel-wrapper {
     position: absolute;
@@ -19,16 +40,16 @@
 
 .thirds-container {
     display: flex;
-    gap: 40px; 
+    gap: var(--card-gap);
     height: 50vh;
     overflow-x: hidden; 
-    scroll-behavior: smooth;
+    /* We leave this here, but JS will briefly disable it for the jump! */
+    scroll-behavior: smooth; 
     align-items: center;
     padding: 40px 0;
     position: relative;
-    /* Perfect Centering math: 50% of container minus half the card width (160px) */
-    padding-left: calc(50% - 160px); 
-    padding-right: calc(50% - 160px);
+    padding-left: calc(50% - (var(--card-width) / 2));
+    padding-right: calc(50% - (var(--card-width) / 2));
 }
 
 /* NEW: When all cards fit on screen, this removes the scroll padding */
@@ -45,28 +66,28 @@
 
 .poster-card {
     height: 100%;
-    width: 320px; 
-    flex: 0 0 320px;
-    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease, box-shadow 0.3s ease;
+    width: var(--card-width); 
+    flex: 0 0 var(--card-width);
+    /* Added "filter 0.6s ease" to the end! */
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease, box-shadow 0.3s ease, filter 0.6s ease;
     position: relative;
     border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
     
-    /* Default state: Shrunk, dimmed, and UNCLICKABLE */
     transform: scale(0.85); 
     opacity: 0.4;
     pointer-events: none; 
 }
 
 .poster-card.active-focus {
-    transform: scale(1.05); /* Scaled Up */
+    transform: scale(1.05); 
     opacity: 1;
-    pointer-events: auto; /* ONLY this card is clickable */
+    pointer-events: auto; 
 }
 
-/* Hover Outline (Color injected via JS based on campaign) */
-.poster-card.active-focus:hover {
+/* Disable Hover glow for disabled campaigns */
+.poster-card.active-focus:not(.disabled-poster):hover {
     box-shadow: 0 0 25px var(--campaign-color), 0 0 0 3px var(--campaign-color);
 }
 
@@ -93,12 +114,11 @@
     letter-spacing: 1px;
 }
 
-/* Ensure disabled states absolutely crush any hover/focus effects */
+/* Let disabled cards scale up naturally, but keep them grayed out! */
 .poster-card.disabled-poster {
     filter: grayscale(1) brightness(0.4) !important;
     opacity: 0.4 !important;
     pointer-events: none !important;
-    transform: scale(0.85) !important;
     box-shadow: none !important;
     cursor: default !important;
 }
@@ -170,7 +190,8 @@
 
 .character-list {
     width: 100%;
-    max-height: 40vh;
+    aspect-ratio: 2;
+    max-height: 50vh;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -190,10 +211,15 @@
     align-items: center;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--campaign-color, var(--glass-border));
-    padding: 16px;
+    padding: 20px;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-size: 1.1rem;
+}
+
+.resume-char-info strong {
+    font-size: 1.3rem;
 }
 
 .resume-char-item:hover {
@@ -213,4 +239,10 @@
 .resume-char-item:hover .resume-arrow {
     opacity: 1;
     transform: translateX(0);
+}
+
+/* Instantly freezes all animations for seamless teleports */
+.no-transitions, .no-transitions * {
+    transition: none !important;
+    scroll-behavior: auto !important;
 }

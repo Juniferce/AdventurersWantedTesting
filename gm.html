@@ -3,41 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GM Terminal | Adventurers Wanted</title>
+    <title>GM Terminal - Nexus</title>
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="gm.css">
+    <style>
+        /* Clean native color picker */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+            box-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; }
+        
+        /* Stop text selection while dragging cards */
+        .gm-char-card {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
 </head>
 <body>
 
-    <div class="admin-header">
-        <h1 class="glow-text">GM COMMAND</h1>
-        <div class="main-tabs">
-            <button class="tab-btn active" id="btn-players" onclick="switchTab('players')">Players</button>
-            <button class="tab-btn" id="btn-campaigns" onclick="switchTab('campaigns')">Campaigns</button>
+    <div id="app-container">
+        <div class="admin-header">
+            <h1 class="glow-text" style="margin-bottom: 20px;">GM Terminal</h1>
+            
+            <div class="main-tabs">
+                <button class="tab-btn active" id="tab-btn-groups" onclick="switchTab('groups')">Player Groups</button>
+                <button class="tab-btn" id="tab-btn-campaigns" onclick="switchTab('campaigns')">Campaigns</button>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <button class="create-group-btn" id="manual-group-btn">+ Create Manual Group</button>
+                <button class="create-group-btn hidden" id="add-campaign-btn">+ Add Blank Campaign</button>
+            </div>
+        </div>
+
+        <div id="tab-groups" class="tab-content">
+            <div id="groups-container" class="groups-container">
+                <div style="text-align: center; opacity: 0.5;">Loading Universe...</div>
+            </div>
+        </div>
+
+        <div id="tab-campaigns" class="tab-content hidden">
+            <div id="campaigns-container" class="settings-panel">
+                <div style="text-align: center; opacity: 0.5;">Loading Campaigns...</div>
+            </div>
         </div>
     </div>
 
-    <section id="tab-players" class="tab-content active">
-        <div class="filter-bar" id="player-filters"></div>
-        <main class="character-grid" id="master-character-list"></main>
-    </section>
+    <div id="char-edit-modal" class="modal-overlay modal-closed">
+        <div class="glass-card modal-content">
+            <h2 class="glow-text" style="margin-bottom: 20px; font-size: 1.8rem;">Edit Adventurer</h2>
 
-    <section id="tab-campaigns" class="tab-content hidden" style="padding: 20px; max-width: 800px; margin: 0 auto;">
-        <div class="glass-card" style="margin-bottom: 20px;">
-            <h3>Create New Campaign</h3>
-            <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                <input type="text" id="new-name" placeholder="Name" class="sleek-input" style="flex:2; margin:0">
-                <input type="text" id="new-color" placeholder="#Hex" class="sleek-input" style="flex:1; margin:0">
-                <input type="text" id="new-img" placeholder="image.png" class="sleek-input" style="flex:1; margin:0">
-                <button class="primary-btn" onclick="addNewCampaign()" style="flex:0.5; padding: 10px;">Add</button>
+            <label style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 5px; display: block;">Character Name</label>
+            <input type="text" id="edit-char-name" class="sleek-input">
+
+            <label style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 5px; display: block;">Class / Role</label>
+            <input type="text" id="edit-char-class" class="sleek-input">
+
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button id="save-char-btn" class="primary-btn" style="flex: 1;">Save Changes</button>
+                <button id="delete-char-btn" class="trash-btn" style="padding: 0 20px; font-size: 1.2rem;" title="Delete Character">🗑️</button>
             </div>
+            <button class="secondary-btn" onclick="closeCharEditModal()" style="margin-top: 15px;">Cancel</button>
         </div>
-        <div id="campaign-list-container"></div>
-    </section>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -51,62 +93,399 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- Tab Logic ---
-        window.switchTab = (t) => {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${t}`).classList.remove('hidden');
-            document.getElementById(`btn-${t}`).classList.add('active');
-        };
+        let liveCampaigns = [];
+        let liveGroups = [];
+        let liveCharacters = [];
 
-        // --- Campaign Logic ---
-        window.addNewCampaign = async () => {
-            const name = document.getElementById('new-name').value;
-            const color = document.getElementById('new-color').value;
-            const image = document.getElementById('new-img').value;
-            if(!name) return;
-            await addDoc(collection(db, "campaigns"), { name, color, image, enabled: true, order: Date.now() });
-            document.getElementById('new-name').value = "";
-        };
+        // --- TAB LOGIC ---
+        window.switchTab = (tabName) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
-        window.toggleCamp = async (id, val) => {
-            await updateDoc(doc(db, "campaigns", id), { enabled: val });
-        };
-
-        window.soloMode = async (targetId) => {
-            const all = document.querySelectorAll('.camp-row');
-            for(let row of all) {
-                const id = row.dataset.id;
-                await updateDoc(doc(db, "campaigns", id), { enabled: id === targetId });
+            if (tabName === 'groups') {
+                document.getElementById('manual-group-btn').classList.remove('hidden');
+                document.getElementById('add-campaign-btn').classList.add('hidden');
+            } else {
+                document.getElementById('manual-group-btn').classList.add('hidden');
+                document.getElementById('add-campaign-btn').classList.remove('hidden');
             }
         };
 
+        // --- FETCH DATA ---
         onSnapshot(collection(db, "campaigns"), (snap) => {
-            const container = document.getElementById('campaign-list-container');
-            container.innerHTML = "";
-            snap.forEach(d => {
-                const c = d.data();
-                const div = document.createElement('div');
-                div.className = "glass-card camp-row";
-                div.dataset.id = d.id;
-                div.style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:15px;";
-                div.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:15px">
-                        <div style="width:20px; height:20px; border-radius:50%; background:${c.color}"></div>
-                        <strong>${c.name}</strong>
-                    </div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <button class="solo-btn" onclick="soloMode('${d.id}')" style="background:none; border:1px solid #fff; color:#fff; font-size:10px; cursor:pointer; padding:4px;">SOLO</button>
-                        <label class="switch">
-                            <input type="checkbox" ${c.enabled ? 'checked' : ''} onchange="toggleCamp('${d.id}', this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                        <button onclick="deleteDoc(doc(db, 'campaigns', '${d.id}'))" style="background:none; border:none; cursor:pointer;">🗑️</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+            liveCampaigns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderGroups();
+            renderCampaigns();
         });
+
+        onSnapshot(collection(db, "groups"), (snap) => {
+            liveGroups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderGroups();
+        });
+
+        onSnapshot(collection(db, "characters"), async (snap) => {
+            liveCharacters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            await reconcileAutoGroups();
+            renderGroups();
+        });
+
+        // --- CHARACTER EDIT MODAL LOGIC ---
+        let editingCharId = null;
+
+        window.closeCharEditModal = () => {
+            document.getElementById('char-edit-modal').classList.add('modal-closed');
+            editingCharId = null;
+        };
+
+        window.openCharEditModal = (charId) => {
+            const char = liveCharacters.find(c => c.id === charId);
+            if (!char) return;
+
+            editingCharId = charId;
+            document.getElementById('edit-char-name').value = char.name || "";
+            document.getElementById('edit-char-class').value = char.class || "";
+
+            // Reset the trash button so it's not armed from a previous opening
+            const delBtn = document.getElementById('delete-char-btn');
+            delBtn.classList.remove('armed');
+            delBtn.innerHTML = "🗑️";
+
+            document.getElementById('char-edit-modal').classList.remove('modal-closed');
+        };
+
+        document.getElementById('save-char-btn').onclick = async () => {
+            if (!editingCharId) return;
+            const newName = document.getElementById('edit-char-name').value.trim();
+            const newClass = document.getElementById('edit-char-class').value.trim();
+
+            if (newName) {
+                await updateDoc(doc(db, "characters", editingCharId), {
+                    name: newName,
+                    class: newClass
+                });
+                window.closeCharEditModal();
+            }
+        };
+
+        document.getElementById('delete-char-btn').onclick = async (e) => {
+            if (!editingCharId) return;
+            const btn = e.target;
+            
+            // Armed Delete Logic
+            if (!btn.classList.contains('armed')) {
+                btn.classList.add('armed');
+                btn.innerHTML = "Confirm?";
+                setTimeout(() => {
+                    if (btn) {
+                        btn.classList.remove('armed');
+                        btn.innerHTML = "🗑️";
+                    }
+                }, 3000);
+            } else {
+                await deleteDoc(doc(db, "characters", editingCharId));
+                window.closeCharEditModal();
+            }
+        };
+
+        // --- CAMPAIGNS TAB LOGIC ---
+        document.getElementById('add-campaign-btn').onclick = async () => {
+            await addDoc(collection(db, "campaigns"), {
+                name: "New Adventure",
+                color: "#ffffff",
+                enabled: false,
+                image: "https://via.placeholder.com/320x480?text=Poster",
+                order: liveCampaigns.length
+            });
+        };
+
+        function renderCampaigns() {
+            const container = document.getElementById('campaigns-container');
+            container.innerHTML = "";
+
+            const sortedCamps = [...liveCampaigns].sort((a,b) => (a.order || 0) - (b.order || 0));
+
+            sortedCamps.forEach(camp => {
+                const row = document.createElement('div');
+                row.className = "setting-row";
+                row.style.borderLeft = `4px solid ${camp.color || '#fff'}`;
+
+                const infoDiv = document.createElement('div');
+                infoDiv.style.display = "flex";
+                infoDiv.style.alignItems = "center";
+                infoDiv.style.gap = "15px";
+                infoDiv.style.flexGrow = "1";
+
+                const colorPicker = document.createElement('input');
+                colorPicker.type = "color";
+                colorPicker.value = camp.color || "#ffffff";
+                colorPicker.title = "Change Theme Color";
+                colorPicker.onchange = async (e) => {
+                    await updateDoc(doc(db, "campaigns", camp.id), { color: e.target.value });
+                };
+
+                const titleText = document.createElement('div');
+                titleText.className = "setting-label";
+                titleText.innerText = camp.name;
+
+                const editBtn = document.createElement('button');
+                editBtn.className = "icon-btn";
+                editBtn.innerHTML = "✎";
+                editBtn.onclick = () => {
+                    const input = document.createElement('input');
+                    input.className = "group-name-input"; 
+                    input.value = camp.name;
+                    
+                    const saveName = async () => {
+                        if (input.value.trim() !== "" && input.value !== camp.name) {
+                            await updateDoc(doc(db, "campaigns", camp.id), { name: input.value.trim() });
+                        } else {
+                            renderCampaigns(); 
+                        }
+                    };
+
+                    input.onblur = saveName;
+                    input.onkeydown = (e) => { if (e.key === 'Enter') saveName(); };
+
+                    infoDiv.replaceChild(input, titleText);
+                    input.focus();
+                };
+
+                infoDiv.appendChild(colorPicker);
+                infoDiv.appendChild(titleText);
+                infoDiv.appendChild(editBtn);
+
+                const controls = document.createElement('div');
+                controls.style.display = "flex";
+                controls.style.alignItems = "center";
+                controls.style.gap = "20px";
+
+                const toggleLabel = document.createElement('label');
+                toggleLabel.className = "switch";
+                const toggleInput = document.createElement('input');
+                toggleInput.type = "checkbox";
+                toggleInput.checked = camp.enabled !== false;
+                toggleInput.onchange = async (e) => {
+                    await updateDoc(doc(db, "campaigns", camp.id), { enabled: e.target.checked });
+                };
+                const slider = document.createElement('span');
+                slider.className = "slider";
+                toggleLabel.appendChild(toggleInput);
+                toggleLabel.appendChild(slider);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = "trash-btn";
+                deleteBtn.innerHTML = "🗑️";
+                deleteBtn.onclick = async () => {
+                    if (!deleteBtn.classList.contains('armed')) {
+                        deleteBtn.classList.add('armed');
+                        deleteBtn.innerHTML = "Confirm?";
+                        setTimeout(() => {
+                            if (deleteBtn) {
+                                deleteBtn.classList.remove('armed');
+                                deleteBtn.innerHTML = "🗑️";
+                            }
+                        }, 3000); 
+                    } else {
+                        await deleteDoc(doc(db, "campaigns", camp.id));
+                    }
+                };
+
+                controls.appendChild(toggleLabel);
+                controls.appendChild(deleteBtn);
+
+                row.appendChild(infoDiv);
+                row.appendChild(controls);
+                container.appendChild(row);
+            });
+        }
+
+        // --- GROUPS TAB LOGIC ---
+        async function reconcileAutoGroups() {
+            const twoHoursMs = 2 * 60 * 60 * 1000;
+
+            for (let char of liveCharacters) {
+                if (!char.groupId) {
+                    let charTime = char.createdAt ? (char.createdAt.toMillis ? char.createdAt.toMillis() : char.createdAt) : Date.now();
+                    
+                    let matchedGroup = liveGroups.find(g => {
+                        let gTime = g.createdAt ? (g.createdAt.toMillis ? g.createdAt.toMillis() : g.createdAt) : 0;
+                        return Math.abs(charTime - gTime) <= twoHoursMs && g.campaign === char.campaign;
+                    });
+
+                    if (matchedGroup) {
+                        await updateDoc(doc(db, "characters", char.id), { groupId: matchedGroup.id });
+                    } else {
+                        const campData = liveCampaigns.find(c => c.name === char.campaign);
+                        const groupColor = campData ? campData.color : "#ffffff";
+
+                        const newGroupRef = await addDoc(collection(db, "groups"), {
+                            name: `Group ${liveGroups.length + 1}`,
+                            createdAt: char.createdAt || Timestamp.now(),
+                            campaign: char.campaign,
+                            color: groupColor
+                        });
+                        
+                        liveGroups.push({ id: newGroupRef.id, name: `Group ${liveGroups.length + 1}`, createdAt: charTime, campaign: char.campaign, color: groupColor });
+                        await updateDoc(doc(db, "characters", char.id), { groupId: newGroupRef.id });
+                    }
+                }
+            }
+        }
+
+        document.getElementById('manual-group-btn').onclick = async () => {
+            await addDoc(collection(db, "groups"), {
+                name: `Group ${liveGroups.length + 1}`,
+                createdAt: Timestamp.now(),
+                campaign: "Custom",
+                color: "#ffffff"
+            });
+        };
+
+        function renderGroups() {
+            const container = document.getElementById('groups-container');
+            container.innerHTML = "";
+
+            if (liveGroups.length === 0) {
+                container.innerHTML = `<div style="text-align: center; opacity: 0.5;">No groups formed yet.</div>`;
+                return;
+            }
+
+            const sortedGroups = [...liveGroups].sort((a,b) => {
+                let timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : a.createdAt;
+                let timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : b.createdAt;
+                return timeA - timeB;
+            });
+
+            sortedGroups.forEach(group => {
+                const groupEl = document.createElement('div');
+                groupEl.className = "player-group";
+                groupEl.dataset.groupId = group.id;
+                
+                const campData = liveCampaigns.find(c => c.name === group.campaign);
+                const syncColor = campData ? campData.color : group.color;
+                groupEl.style.setProperty('--group-color', syncColor);
+
+                // Drag & Drop
+                groupEl.addEventListener('dragover', (e) => {
+                    e.preventDefault(); 
+                    groupEl.classList.add('drag-over');
+                });
+                groupEl.addEventListener('dragleave', () => groupEl.classList.remove('drag-over'));
+                groupEl.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    groupEl.classList.remove('drag-over');
+                    const charId = e.dataTransfer.getData('text/plain');
+                    if (charId) await updateDoc(doc(db, "characters", charId), { groupId: group.id });
+                });
+
+                // Header
+                const header = document.createElement('div');
+                header.className = "group-header";
+                
+                const titleBlock = document.createElement('div');
+                titleBlock.style.display = "flex";
+                titleBlock.style.alignItems = "center";
+                titleBlock.style.gap = "10px";
+                titleBlock.style.flexGrow = "1";
+
+                const titleText = document.createElement('h2');
+                titleText.className = "group-title";
+                titleText.innerText = group.name;
+
+                const editBtn = document.createElement('button');
+                editBtn.className = "icon-btn";
+                editBtn.innerHTML = "✎"; 
+                editBtn.onclick = () => {
+                    const input = document.createElement('input');
+                    input.className = "group-name-input";
+                    input.value = group.name;
+                    
+                    const saveName = async () => {
+                        if (input.value.trim() !== "" && input.value !== group.name) {
+                            await updateDoc(doc(db, "groups", group.id), { name: input.value.trim() });
+                        } else renderGroups();
+                    };
+
+                    input.onblur = saveName;
+                    input.onkeydown = (e) => { if (e.key === 'Enter') saveName(); };
+
+                    titleBlock.replaceChild(input, titleText);
+                    input.focus();
+                };
+
+                const deleteGroupBtn = document.createElement('button');
+                deleteGroupBtn.className = "icon-btn";
+                deleteGroupBtn.innerHTML = "🗑️";
+                deleteGroupBtn.title = "Delete empty group";
+                deleteGroupBtn.onclick = async () => {
+                    const charsInGroup = liveCharacters.filter(c => c.groupId === group.id);
+                    if (charsInGroup.length > 0) return alert("Move all players out of this group before deleting it!");
+                    if (confirm(`Delete ${group.name}?`)) await deleteDoc(doc(db, "groups", group.id));
+                };
+
+                titleBlock.appendChild(titleText);
+                titleBlock.appendChild(editBtn);
+                header.appendChild(titleBlock);
+                header.appendChild(deleteGroupBtn);
+                groupEl.appendChild(header);
+
+                // Grid
+                const grid = document.createElement('div');
+                grid.className = "group-grid";
+
+                const charsInGroup = liveCharacters.filter(c => c.groupId === group.id);
+                charsInGroup.forEach(char => {
+                    const card = document.createElement('div');
+                    card.className = "gm-char-card";
+                    card.draggable = true;
+                    
+                    card.innerHTML = `
+                        <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${char.name}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.6;">${char.class}</div>
+                        <div style="font-size: 0.75rem; color: var(--accent-glow); margin-top: 10px;">${char.campaign}</div>
+                    `;
+
+                    // Drag Events
+                    card.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', char.id);
+
+                        const dragGhost = card.cloneNode(true);
+                        dragGhost.style.position = "absolute";
+                        dragGhost.style.top = "-1000px";
+                        dragGhost.style.transform = "scale(1.1) rotate(5deg)";
+                        dragGhost.style.boxShadow = "0 10px 20px rgba(0,0,0,0.5)";
+                        dragGhost.style.border = `1px solid ${syncColor}`;
+                        document.body.appendChild(dragGhost);
+                        
+                        e.dataTransfer.setDragImage(dragGhost, dragGhost.offsetWidth / 2, dragGhost.offsetHeight / 2);
+                        setTimeout(() => {
+                            card.classList.add('ghost-state');
+                            dragGhost.remove();
+                        }, 0);
+                    });
+                    
+                    card.addEventListener('dragend', () => card.classList.remove('ghost-state'));
+
+                    // Click to Edit Event
+                    card.addEventListener('click', () => {
+                        window.openCharEditModal(char.id);
+                    });
+
+                    grid.appendChild(card);
+                });
+
+                if (charsInGroup.length === 0) {
+                    grid.innerHTML = `<div style="opacity: 0.3; grid-column: 1 / -1; font-style: italic;">Empty Group. Drag players here.</div>`;
+                }
+
+                groupEl.appendChild(grid);
+                container.appendChild(groupEl);
+            });
+        }
     </script>
 </body>
 </html>

@@ -130,60 +130,139 @@
             }
         }
 
-        // --- DYNAMIC CAROUSEL METRICS ---
-        const CARD_WIDTH = 320; 
-        const GAP = 40;
+        // --- LEAN INFINITE ENGINE ---
+        let originalCampaigns = [];
+        let currentIndex = 0;
+        let isScrolling = false;
+        let L = 0; // Number of original campaigns
 
-        function alignCarousel(snapshotLength) {
-            // Calculate total pixel width of all posters + gaps
-            const totalWidth = (snapshotLength * CARD_WIDTH) + ((snapshotLength - 1) * GAP);
+        function getMetrics() {
+            const isMobile = window.innerWidth <= 768;
+            return {
+                CARD_WIDTH: isMobile ? 260 : 320,
+                GAP: isMobile ? 20 : 40
+            };
+        }
+
+        function createCard(camp) {
+            const card = document.createElement('div');
+            card.className = "poster-card";
+            card.dataset.id = camp.id; 
+
+            if (camp.enabled === false) card.classList.add('disabled-poster');
+
+            card.style.setProperty('--campaign-color', camp.color); 
+            card.innerHTML = `
+                <img src="${camp.image}" alt="${camp.name}" style="width:100%; height:100%; object-fit:cover;">
+                <div class="poster-overlay"><h3>${camp.name}</h3></div>
+            `;
+            
+            card.onclick = () => {
+                const liveCamp = originalCampaigns.find(c => c.id === camp.id);
+                if (!liveCamp || liveCamp.enabled === false) return; 
+
+                localStorage.setItem('campaignColor', liveCamp.color);
+                localStorage.setItem('currentCampaign', liveCamp.name);
+                const flash = document.getElementById('color-flash');
+                flash.style.backgroundColor = liveCamp.color;
+                flash.style.opacity = "1";
+                setTimeout(() => { window.location.href = "create_signal.html"; }, 420);
+            };
+            return card;
+        }
+
+        function renderCarousel() {
+            if (originalCampaigns.length === 0) return;
+            L = originalCampaigns.length;
+            const { CARD_WIDTH, GAP } = getMetrics();
+            
+            const totalNativeWidth = (L * CARD_WIDTH) + ((L - 1) * GAP);
+            const isGridMode = (totalNativeWidth <= container.clientWidth - 40);
+
+            container.innerHTML = "";
             const arrows = document.querySelectorAll('.nav-arrow');
 
-            // If there's enough room on screen for everything (with a 40px buffer)
-            if (totalWidth <= container.clientWidth - 40) {
+            if (isGridMode || L <= 1) {
+                // GRID MODE: Fits natively. No clones needed.
                 container.classList.add('centered-mode');
-                mask.classList.add('centered-mode-mask'); // Turn off blurry edges
+                mask.classList.add('centered-mode-mask');
                 arrows.forEach(a => a.style.display = "none");
                 
-                // Make all non-disabled cards active & clickable
-                document.querySelectorAll('.poster-card:not(.disabled-poster)').forEach(c => {
-                    c.classList.add('active-focus');
-                });
+                originalCampaigns.forEach(c => container.appendChild(createCard(c)));
+                setTimeout(() => updateScale(), 50);
             } else {
-                // Not enough room - switch to Carousel Mode
+                // LEAN CAROUSEL: Left Clones + Real Center + Right Clones
                 container.classList.remove('centered-mode');
                 mask.classList.remove('centered-mode-mask');
+                arrows.forEach(a => a.style.display = "flex");
 
+                originalCampaigns.forEach(c => container.appendChild(createCard(c))); // Left Dummies
+                originalCampaigns.forEach(c => container.appendChild(createCard(c))); // Real Middle
+                originalCampaigns.forEach(c => container.appendChild(createCard(c))); // Right Dummies
+
+                // Start in the Real Middle
+                currentIndex = L; 
+                
+                container.classList.add('no-transitions');
+                container.scrollLeft = currentIndex * (CARD_WIDTH + GAP);
+                
                 setTimeout(() => {
-                    if (snapshotLength > 1) {
-                        // Start on the second card 
-                        container.scrollLeft = (CARD_WIDTH + GAP);
-                    } else {
-                        container.scrollLeft = 0;
-                    }
-                    updateScale(); 
-                    updateArrows(); 
-                }, 100);
+                    container.classList.remove('no-transitions');
+                    updateScale();
+                }, 50);
             }
         }
 
-        // --- SCROLL LOGIC ---
         window.scrollCarousel = (dir) => {
-            const move = CARD_WIDTH + GAP;
-            container.scrollBy({ left: dir * move, behavior: 'smooth' });
+            if (isScrolling || container.classList.contains('centered-mode')) return;
+            
+            const { CARD_WIDTH, GAP } = getMetrics();
+            const moveAmount = CARD_WIDTH + GAP;
+
+            isScrolling = true;
+            currentIndex += dir;
+            container.scrollLeft = currentIndex * moveAmount;
+
+            // Wait for smooth scroll to finish entirely
+            setTimeout(() => {
+                // Have we wandered into the dummy clones?
+                if (currentIndex < L) {
+                    // Scrolled left into the left dummies -> Teleport to Real Right
+                    currentIndex += L;
+                    performInvisibleSnap(currentIndex * moveAmount);
+                } else if (currentIndex >= 2 * L) {
+                    // Scrolled right into the right dummies -> Teleport to Real Left
+                    currentIndex -= L;
+                    performInvisibleSnap(currentIndex * moveAmount);
+                }
+                
+                updateScale();
+                isScrolling = false;
+            }, 550); // Slightly longer than transition to ensure it fully settles
         };
 
+        // THE MAGIC FLICKER-FREE TELEPORT
+        function performInvisibleSnap(targetScrollLeft) {
+            container.classList.add('no-transitions'); // Kill all tweens instantly
+            container.scrollLeft = targetScrollLeft; 
+            void container.offsetWidth; // Force browser to draw the jump
+            container.classList.remove('no-transitions'); // Restore tweens
+        }
+
         const updateScale = () => {
-            // Don't mess with scale if we are in Grid mode
-            if (container.classList.contains('centered-mode')) return;
-
             const cards = document.querySelectorAll('.poster-card');
-            if (cards.length === 0) return;
+            
+            if (container.classList.contains('centered-mode')) {
+                cards.forEach(c => c.classList.add('active-focus'));
+                return;
+            }
 
+            const { CARD_WIDTH, GAP } = getMetrics();
             const centerIndex = Math.round(container.scrollLeft / (CARD_WIDTH + GAP));
+            const realTarget = centerIndex % L;
 
             cards.forEach((card, i) => {
-                if (i === centerIndex) {
+                if (i % L === realTarget) {
                     card.classList.add('active-focus');
                 } else {
                     card.classList.remove('active-focus');
@@ -192,73 +271,54 @@
         };
 
         container.addEventListener('scroll', updateScale);
-        container.addEventListener('scroll', updateArrows);
-
         container.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
         container.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
-        // Update when the browser resizes (switches between Carousel and Grid dynamically)
         window.addEventListener('resize', () => {
-            const cards = document.querySelectorAll('.poster-card');
-            if (cards.length > 0) alignCarousel(cards.length);
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(renderCarousel, 200);
         });
-
-        function updateArrows() {
-            if (container.classList.contains('centered-mode')) return;
-            
-            const left = document.getElementById('arrow-left');
-            const right = document.getElementById('arrow-right');
-            
-            left.style.display = container.scrollLeft > 5 ? "flex" : "none";
-            right.style.display = (container.scrollLeft + container.clientWidth < container.scrollWidth - 5) ? "flex" : "none";
-        }
 
         // --- FETCH CAMPAIGNS ---
         onSnapshot(collection(db, "campaigns"), (snapshot) => {
-            container.innerHTML = "";
-            
-            // Map ALL campaigns (so disabled ones still show up)
-            const allCampaigns = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }))
-                .sort((a, b) => (a.order || 0) - (b.order || 0));
+            const changes = snapshot.docChanges();
+            const requiresFullRebuild = changes.some(change => change.type === 'added' || change.type === 'removed');
 
-            if (allCampaigns.length === 0) {
-                container.innerHTML = `<div style="width:100%; text-align:center; opacity:0.5; padding: 50px;">No active campaigns. Check GM Terminal.</div>`;
-                return;
-            }
+            if (originalCampaigns.length === 0 || requiresFullRebuild) {
+                originalCampaigns = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-            allCampaigns.forEach(camp => {
-                const card = document.createElement('div');
-                card.className = "poster-card";
-                
-                // Add the disabled class if toggled off
-                if (camp.enabled === false) {
-                    card.classList.add('disabled-poster');
+                if (originalCampaigns.length === 0) {
+                    container.innerHTML = `<div style="width:100%; text-align:center; opacity:0.5; padding: 50px;">No campaigns. Check GM Terminal.</div>`;
+                    return;
                 }
+                renderCarousel();
+            } 
+            else {
+                // Soft Tweens for edited/disabled campaigns
+                changes.forEach(change => {
+                    if (change.type === 'modified') {
+                        const data = change.doc.data();
+                        const id = change.doc.id;
+                        
+                        const index = originalCampaigns.findIndex(c => c.id === id);
+                        if (index > -1) originalCampaigns[index] = { id, ...data };
 
-                card.style.setProperty('--campaign-color', camp.color); 
-                card.innerHTML = `
-                    <img src="${camp.image}" alt="${camp.name}" style="width:100%; height:100%; object-fit:cover;">
-                    <div class="poster-overlay"><h3>${camp.name}</h3></div>
-                `;
-                
-                card.onclick = () => {
-                    if (camp.enabled === false) return; // Failsafe
-                    
-                    localStorage.setItem('campaignColor', camp.color);
-                    localStorage.setItem('currentCampaign', camp.name);
-                    const flash = document.getElementById('color-flash');
-                    flash.style.backgroundColor = camp.color;
-                    flash.style.opacity = "1";
-                    
-                    setTimeout(() => { 
-                        window.location.href = "create_signal.html"; 
-                    }, 420);
-                };
-                container.appendChild(card);
-            });
-            
-            alignCarousel(allCampaigns.length);
+                        const affectedCards = document.querySelectorAll(`.poster-card[data-id="${id}"]`);
+                        affectedCards.forEach(card => {
+                            if (data.enabled === false) {
+                                card.classList.add('disabled-poster');
+                            } else {
+                                card.classList.remove('disabled-poster');
+                            }
+                            card.style.setProperty('--campaign-color', data.color);
+                            card.querySelector('img').src = data.image;
+                            card.querySelector('h3').innerText = data.name;
+                        });
+                    }
+                });
+            }
         });
 
         // --- INTRO / SKIP LOGIC ---

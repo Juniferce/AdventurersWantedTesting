@@ -187,7 +187,7 @@ html, body {
 
 .modal-content {
     width: 90%;
-    max-width: 500px;
+    max-width: 750px; /* Greatly increased from 500px */
     transform: translateY(0);
     transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     box-sizing: border-box;
@@ -240,4 +240,12 @@ html, body {
 /* ====================== UTILITIES ====================== */
 .hidden {
     display: none !important;
+}
+
+/* Mobile Overrides for Global Elements */
+@media (max-width: 768px) {
+    #main-title { font-size: 1.8rem; width: 95%; top: 40%; }
+    .glass-card { padding: 16px; }
+    .modal-content { width: 95%; }
+    .primary-btn { padding: 12px 24px; font-size: 1rem; }
 }

@@ -105,3 +105,12 @@
     letter-spacing: 1px;
     opacity: 0.6;
 }
+
+/* Mobile Overrides for Character Sheet */
+@media (max-width: 768px) {
+    .profile-section { flex-direction: column; text-align: center; gap: 15px; }
+    .profile-info-left { flex-direction: column; gap: 10px; }
+    .meters-container { width: 100%; align-items: center; }
+    .meter-row { justify-content: center; width: 100%; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); } /* 2 columns instead of 3 */
+}
