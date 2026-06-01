@@ -249,3 +249,45 @@ html, body {
     .modal-content { width: 95%; }
     .primary-btn { padding: 12px 24px; font-size: 1rem; }
 }
+
+/* ====================== LEVIATHAN: DEEP SEA PIRATE THEME ====================== */
+:root {
+    /* A bright, bioluminescent cyan/blue for the primary glow */
+    --accent-glow: #00d0ff; 
+    /* A tarnished gold/brass for pirate accents (optional use) */
+    --pirate-brass: #d4af37; 
+}
+
+/* Deep ocean gradient from murky teal down to pitch black */
+.ocean-bg {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at top, #072236 0%, #01060a 80%, #000000 100%);
+    z-index: -2;
+    pointer-events: none;
+}
+
+/* Nautical/Topographic map overlay */
+.nautical-map-overlay {
+    position: fixed;
+    inset: 0;
+    /* Combines a navigation grid with circular depth-chart (bathymetric) lines */
+    background-image: 
+        /* The Longitude/Latitude Grid */
+        linear-gradient(rgba(0, 208, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 208, 255, 0.07) 1px, transparent 1px),
+        /* Topographic Depth Rings */
+        repeating-radial-gradient(circle at 30% 40%, transparent 0, transparent 60px, rgba(0, 208, 255, 0.05) 61px, transparent 62px),
+        repeating-radial-gradient(circle at 80% 80%, transparent 0, transparent 40px, rgba(0, 208, 255, 0.03) 41px, transparent 42px);
+    background-size: 80px 80px, 80px 80px, 100% 100%, 100% 100%;
+    z-index: -1;
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* Optional: Make the glass cards feel slightly more like frosted sea-glass */
+.glass-card.leviathan-theme {
+    background: rgba(0, 30, 50, 0.4);
+    border: 1px solid rgba(0, 208, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 208, 255, 0.05);
+}

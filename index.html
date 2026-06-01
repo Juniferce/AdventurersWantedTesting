@@ -117,6 +117,8 @@
                         localStorage.setItem('currentCharacterId', doc.id);
                         if (data.campaign === "The Signal From Space") {
                             window.location.href = "character_signal.html";
+                        } else if (data.campaign === "Escape From Leviathan") {
+                            window.location.href = "character_leviathan.html";
                         } else {
                             alert(`The character sheet for "${data.campaign}" is not ready yet.`);
                         }
