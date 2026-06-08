@@ -7,72 +7,132 @@
     <link rel="stylesheet" href="base.css">
     <style>
         :root {
-            --accent-glow: #ff6b00; /* Ervan's Keep Amber */
+            --accent-glow: #ff6b00;
         }
         
-        /* Ambient Dungeon/Keep background style */
-        .keep-bg {
+        /* Wooden Table Environment */
+        .table-bg {
             position: fixed;
             inset: 0;
-            background: radial-gradient(circle at top, #2a1405 0%, #080401 80%, #000000 100%);
+            background: 
+                linear-gradient(90deg, rgba(0,0,0,0.3) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.3) 161px),
+                radial-gradient(circle at 50% 20%, #2d1604 0%, #120902 60%, #000000 100%);
+            background-size: 160px 100%, 100% 100%;
             z-index: -2;
             pointer-events: none;
         }
 
-        .stone-grid-overlay {
+        .amber-torchlight {
             position: fixed;
             inset: 0;
-            background-image: 
-                linear-gradient(rgba(255, 107, 0, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 107, 0, 0.03) 1px, transparent 1px),
-                repeating-radial-gradient(circle at 50% 30%, transparent 0, transparent 80px, rgba(255, 107, 0, 0.02) 81px, transparent 84px);
-            background-size: 60px 60px, 60px 60px, 100% 100%;
+            background: radial-gradient(circle at 50% 40%, rgba(255, 107, 0, 0.08) 0%, transparent 70%);
             z-index: -1;
-            opacity: 0.9;
             pointer-events: none;
+        }
+
+        /* Color Flash Transition Layer */
+        .color-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background-color: #ff6b00;
+            opacity: 1; /* Starts solid, fades out on load */
+            pointer-events: none;
+            transition: opacity 0.4s ease;
         }
 
         .creation-flow {
             width: 100%;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
+            max-width: 550px;
+            margin: 30px auto;
+            padding: 15px;
             box-sizing: border-box;
         }
 
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 24px;
+        /* Paper on Table Aesthetic */
+        .paper-sheet {
+            background: #140d07;
+            border: 1px solid rgba(255, 107, 0, 0.4);
+            border-top: 4px solid var(--accent-glow);
+            border-radius: 4px;
+            padding: 32px 24px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(255, 107, 0, 0.05);
+            position: relative;
         }
 
-        .stat-box {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
+        .pool-counter {
+            background: rgba(255, 107, 0, 0.1);
+            border: 1px dashed var(--accent-glow);
+            border-radius: 8px;
             padding: 12px;
             text-align: center;
-        }
-
-        .stat-box label {
-            display: block;
-            font-size: 0.8rem;
-            text-transform: uppercase;
+            margin-bottom: 24px;
+            font-size: 1.1rem;
             letter-spacing: 1px;
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 6px;
         }
 
-        .stat-box input {
-            width: 100%;
-            background: transparent;
-            border: none;
+        /* Mobile-First Custom Stat Row */
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-size: 0.95rem;
+            width: 50px;
+        }
+
+        .stat-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Large, clickable touch-targets for mobile phones */
+        .arrow-btn {
+            background: rgba(255, 107, 0, 0.15);
+            border: 1px solid rgba(255, 107, 0, 0.4);
             color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+
+        .arrow-btn:active {
+            background: var(--accent-glow);
+            transform: scale(0.92);
+        }
+
+        .arrow-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            background: rgba(255,255,255,0.05);
+            border-color: transparent;
+        }
+
+        .stat-display-value {
             font-size: 1.5rem;
             font-weight: bold;
+            min-width: 24px;
             text-align: center;
-            outline: none;
+            color: var(--accent-glow);
         }
 
         .form-label {
@@ -80,82 +140,111 @@
             margin-bottom: 8px;
             font-size: 0.9rem;
             letter-spacing: 1px;
-            color: rgba(255,255,255,0.8);
+            color: rgba(255,255,255,0.7);
         }
 
-        select.sleek-input {
-            appearance: none;
-            cursor: pointer;
-        }
         select.sleek-input option {
-            background: #0d0602;
+            background: #140d07;
             color: white;
         }
     </style>
 </head>
 <body>
 
-    <div class="keep-bg"></div>
-    <div class="stone-grid-overlay"></div>
+    <div id="color-flash" class="color-flash"></div>
+    <div class="table-bg"></div>
+    <div class="amber-torchlight"></div>
 
     <div id="app-container">
         <main class="creation-flow">
-            <div class="glass-card">
-                <h1 class="glow-text" style="font-size: 2rem; margin-bottom: 10px;">Forge an Adventurer</h1>
-                <p style="text-align: center; opacity: 0.6; margin-bottom: 30px; font-size: 0.9rem;">
-                    The Treasure in Ervan's Keep Campaign
+            <div class="paper-sheet">
+                <h1 class="glow-text" style="font-size: 2rem; margin-bottom: 5px;">Forge an Adventurer</h1>
+                <p style="text-align: center; opacity: 0.5; margin-bottom: 25px; font-size: 0.85rem; letter-spacing: 1px;">
+                    The Treasure in Ervan's Keep
                 </p>
+
+                <div class="pool-counter">
+                    Attribute Points Remaining: <strong id="pool-display" style="color: var(--accent-glow);">6</strong>
+                </div>
 
                 <form id="character-form">
                     <label class="form-label" for="char-name">Character Name</label>
-                    <input type="text" id="char-name" class="sleek-input" placeholder="e.g., Alistair the Bold" required>
+                    <input type="text" id="char-name" class="sleek-input" placeholder="e.g., Sir Roderick" required>
 
-                    <label class="form-label" for="char-class">Heroic Calling (Class)</label>
+                    <label class="form-label" for="char-class">Heroic Class</label>
                     <select id="char-class" class="sleek-input" required>
-                        <option value="" disabled selected>Select a class...</option>
+                        <option value="" disabled selected>Choose a path...</option>
                         <option value="Warrior">Warrior</option>
                         <option value="Mage">Mage</option>
                         <option value="Rogue">Rogue</option>
                         <option value="Cleric">Cleric</option>
-                        <option value="Ranger">Ranger</option>
                     </select>
 
-                    <h3 class="form-label" style="margin-top: 10px; margin-bottom: 15px;">Core Attributes</h3>
-                    <div class="stat-grid">
-                        <div class="stat-box">
-                            <label for="stat-str">STR</label>
-                            <input type="number" id="stat-str" min="1" max="20" value="10" required>
+                    <h3 class="form-label" style="margin-top: 20px; margin-bottom: 12px;">Attributes (Range 1-6)</h3>
+                    
+                    <!-- Dynamic Attribute Rows -->
+                    <div id="attributes-wrapper">
+                        <!-- STR -->
+                        <div class="stat-row">
+                            <span class="stat-label">STR</span>
+                            <div class="stat-controls">
+                                <button type="button" class="arrow-btn" onclick="adjustStat('str', -1)">◀</button>
+                                <span class="stat-display-value" id="val-str">2</span>
+                                <button type="button" class="arrow-btn" onclick="adjustStat('str', 1)">▶</button>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <label for="stat-dex">DEX</label>
-                            <input type="number" id="stat-dex" min="1" max="20" value="10" required>
+                        <!-- DEX -->
+                        <div class="stat-row">
+                            <span class="stat-label">DEX</span>
+                            <div class="stat-controls">
+                                <button type="button" class="arrow-btn" onclick="adjustStat('grid-dex', -1)">◀</button>
+                                <span class="stat-display-value" id="val-dex">2</span>
+                                <button type="button" class="arrow-btn" onclick="adjustStat('dex', 1)">▶</button>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <label for="stat-con">CON</label>
-                            <input type="number" id="stat-con" min="1" max="20" value="10" required>
+                        <!-- CON -->
+                        <div class="stat-row">
+                            <span class="stat-label">CON</span>
+                            <div class="stat-controls">
+                                <button type="button" class="arrow-btn" onclick="adjustStat('con', -1)">◀</button>
+                                <span class="stat-display-value" id="val-con">2</span>
+                                <button type="button" class="arrow-btn" onclick="adjustStat('con', 1)">▶</button>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <label for="stat-int">INT</label>
-                            <input type="number" id="stat-int" min="1" max="20" value="10" required>
+                        <!-- INT -->
+                        <div class="stat-row">
+                            <span class="stat-label">INT</span>
+                            <div class="stat-controls">
+                                <button type="button" class="arrow-btn" onclick="adjustStat('int', -1)">◀</button>
+                                <span class="stat-display-value" id="val-int">2</span>
+                                <button type="button" class="arrow-btn" onclick="adjustStat('int', 1)">▶</button>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <label for="stat-wis">WIS</label>
-                            <input type="number" id="stat-wis" min="1" max="20" value="10" required>
+                        <!-- WIS -->
+                        <div class="stat-row">
+                            <span class="stat-label">WIS</span>
+                            <div class="stat-controls">
+                                <button type="button" class="arrow-btn" onclick="adjustStat('wis', -1)">◀</button>
+                                <span class="stat-display-value" id="val-wis">2</span>
+                                <button type="button" class="arrow-btn" onclick="adjustStat('wis', 1)">▶</button>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <label for="stat-cha">CHA</label>
-                            <input type="number" id="stat-cha" min="1" max="20" value="10" required>
+                        <!-- CHA -->
+                        <div class="stat-row">
+                            <span class="stat-label">CHA</span>
+                            <div class="stat-controls">
+                                <button type="button" class="arrow-btn" onclick="adjustStat('cha', -1)">◀</button>
+                                <span class="stat-display-value" id="val-cha">2</span>
+                                <button type="button" class="arrow-btn" onclick="adjustStat('cha', 1)">▶</button>
+                            </div>
                         </div>
                     </div>
 
-                    <label class="form-label" for="char-gear">Starting Equipment / Backstory</label>
-                    <textarea id="char-gear" class="sleek-input" rows="3" style="resize: vertical; font-family: inherit;" placeholder="A rusted sword, leather parchment, and dark secrets..."></textarea>
-
-                    <button type="submit" id="submit-btn" class="primary-btn" style="margin-top: 10px;">
+                    <button type="submit" id="submit-btn" class="primary-btn" style="margin-top: 20px;">
                         Enter the Keep
                     </button>
                     
-                    <button type="button" class="secondary-btn" style="margin-top: 20px; width: 100%; text-align: center;" onclick="goBack()">
+                    <button type="button" class="secondary-btn" style="margin-top: 20px; width: 100%; text-align: center;" onclick="safeNavigate('index.html')">
                         Abandon Quest
                     </button>
                 </form>
@@ -167,7 +256,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Firebase Config mirror
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
             authDomain: "bnm-adventurers-wanted.firebaseapp.com",
@@ -179,17 +267,68 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // Fetch user's persistent UUID
         const deviceId = localStorage.getItem('device_uuid');
 
-        window.goBack = () => {
-            localStorage.setItem('returningFromCharacter', 'true');
-            window.location.href = "index.html";
+        // Engine State
+        let pointsPool = 6;
+        const currentStats = { str: 2, dex: 2, con: 2, int: 2, wis: 2, cha: 2 };
+
+        // Handle page entrance fade-out
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('color-flash').style.opacity = '0';
+            }, 50);
+            updateControlDOM();
+        });
+
+        // Unified Flash Fade Navigation Engine
+        window.safeNavigate = (targetUrl) => {
+            if (targetUrl === 'index.html') {
+                localStorage.setItem('returningFromCharacter', 'true');
+            }
+            const flash = document.getElementById('color-flash');
+            flash.style.opacity = '1';
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 420);
         };
+
+        window.adjustStat = (stat, direction) => {
+            const targetVal = currentStats[stat] + direction;
+            
+            if (direction === 1 && pointsPool <= 0) return;
+            if (targetVal < 1 || targetVal > 6) return;
+
+            currentStats[stat] = targetVal;
+            pointsPool -= direction;
+            
+            updateControlDOM();
+        };
+
+        function updateControlDOM() {
+            document.getElementById('pool-display').innerText = pointsPool;
+            
+            for (const [stat, value] of Object.entries(currentStats)) {
+                const row = document.getElementById(`val-${stat}`);
+                if (row) {
+                    row.innerText = value;
+                    const btns = row.parentElement.querySelectorAll('.arrow-btn');
+                    // Minus Button constraints
+                    btns[0].disabled = (value <= 1);
+                    // Plus Button constraints
+                    btns[1].disabled = (value >= 6 || pointsPool <= 0);
+                }
+            }
+        }
 
         document.getElementById('character-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            if (pointsPool > 0) {
+                alert(`You still have ${pointsPool} points left to distribute!`);
+                return;
+            }
+
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;
             submitBtn.innerText = "Forging Character...";
@@ -199,26 +338,17 @@
                 campaign: "The Treasure in Ervan's Keep",
                 name: document.getElementById('char-name').value,
                 class: document.getElementById('char-class').value,
-                stats: {
-                    str: parseInt(document.getElementById('stat-str').value),
-                    dex: parseInt(document.getElementById('stat-dex').value),
-                    con: parseInt(document.getElementById('stat-con').value),
-                    int: parseInt(document.getElementById('stat-int').value),
-                    wis: parseInt(document.getElementById('stat-wis').value),
-                    cha: parseInt(document.getElementById('stat-cha').value)
-                },
-                equipment: document.getElementById('char-gear').value,
-                hp: 10 + Math.floor((parseInt(document.getElementById('stat-con').value) - 10) / 2), 
-                gold: 15
+                stats: currentStats,
+                hp: 12 + currentStats.con, 
+                gold: 20
             };
 
             try {
                 const docRef = await addDoc(collection(db, "characters"), characterData);
                 localStorage.setItem('currentCharacterId', docRef.id);
-                window.location.href = "character_ervan.html";
+                safeNavigate("character_ervan.html");
             } catch (error) {
                 console.error("Error creating document: ", error);
-                alert("Failed to forge adventurer. Try again.");
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Enter the Keep";
             }
