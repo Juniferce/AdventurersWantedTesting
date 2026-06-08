@@ -15,7 +15,7 @@
             --sketch-font: 'Patrick Hand', 'Segoe UI', cursive;
         }
 
-        /* Dark-Reddish Orange Table Environment */
+        /* Ambient Dark-Red Tabletop Setup matching creation layout */
         .table-bg {
             position: fixed;
             inset: 0;
@@ -24,6 +24,14 @@
                 radial-gradient(circle at 50% 20%, #4a1204 0%, #240500 75%, #0f0100 100%);
             background-size: 160px 100%, 100% 100%;
             z-index: -2;
+            pointer-events: none;
+        }
+
+        .amber-torchlight {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 40%, rgba(255, 77, 0, 0.08) 0%, transparent 75%);
+            z-index: -1;
             pointer-events: none;
         }
 
@@ -37,7 +45,6 @@
             transition: opacity 0.4s ease;
         }
 
-        /* ====================== THE SQUIGGLEVISION ENGINE ====================== */
         @keyframes sketchWiggle {
             0% { filter: url('#sheet-sketch-1'); }
             25% { filter: url('#sheet-sketch-2'); }
@@ -60,7 +67,7 @@
             color: var(--dark-text);
         }
 
-        /* Bright Peachish-Orange Parchment Sheet Modules */
+        /* Corrected to Vibrant Parchment Color Setup */
         .parchment-sheet {
             background: var(--parchment-bright);
             border: 3px solid var(--accent-ink);
@@ -74,7 +81,6 @@
             transition: max-height 0.45s cubic-bezier(0.4, 0, 1, 1), padding 0.45s ease, transform 0.45s ease, opacity 0.3s ease;
         }
 
-        /* Scroll Roll-up Mechanical Closure Effect */
         .parchment-sheet.roll-closed {
             max-height: 0 !important;
             padding-top: 0 !important;
@@ -86,14 +92,13 @@
             overflow: hidden;
         }
 
-        /* Multiple Character Switcher Dropdown Styling */
         .roster-switcher-box {
             background: rgba(255, 255, 255, 0.4);
             border: 2px dashed var(--accent-ink);
             border-radius: 4px 10px 4px 10px;
             padding: 8px 12px;
             margin-bottom: 15px;
-            display: none; /* Display is enabled via script when multiple profiles exist */
+            display: none; 
             align-items: center;
             justify-content: space-between;
             gap: 10px;
@@ -140,13 +145,14 @@
             gap: 15px;
         }
 
-        /* Read-only vital container display configuration */
+        /* Strictly Read-Only Visual Text Container Blocks (No editable inputs) */
         .vital-box {
             background: rgba(255, 255, 255, 0.35);
             border: 2px solid var(--accent-ink);
             border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
             padding: 16px 12px;
             text-align: center;
+            user-select: none;
         }
 
         .vital-display-value {
@@ -178,6 +184,36 @@
             font-weight: bold;
             color: var(--accent-ink);
             margin: 2px 0;
+        }
+
+        .ability-row {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed rgba(138, 51, 0, 0.25);
+        }
+        .ability-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .ability-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--accent-ink);
+        }
+
+        .ability-uses-tag {
+            font-size: 0.95rem;
+            background: rgba(138, 51, 0, 0.12);
+            border: 1px dashed var(--accent-ink);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--dark-text);
+            font-family: var(--sketch-font);
         }
 
         .exit-btn {
@@ -221,18 +257,19 @@
 
     <div id="color-flash" class="color-flash"></div>
     <div class="table-bg"></div>
+    <div class="amber-torchlight"></div>
 
     <div id="app-container">
         <main class="sheet-container">
             
-            <!-- Shared Ledger Frame -->
+            <!-- Vitals Frame -->
             <div class="parchment-sheet wiggle-ui sheet-roll-target">
                 
-                <!-- Cross-Character Matrix Tab Selector -->
+                <!-- Cross-Character Matrix Dropdown Tab Selector -->
                 <div id="roster-switcher" class="roster-switcher-box">
                     <span style="font-weight: bold; font-size: 1.05rem;">📜 Active Profile:</span>
                     <select id="character-select-dropdown" class="roster-select">
-                        <!-- Options injected dynamically via runtime script context -->
+                        <!-- Options injected dynamically via runtime context -->
                     </select>
                 </div>
 
@@ -244,7 +281,7 @@
                     <button class="exit-btn" onclick="safeNavigate('index.html')">Exit Table</button>
                 </div>
 
-                <!-- Live Vitals Tracker (Read-Only Interface Modification) -->
+                <!-- Live Vitals Tracker (Read-Only Layout) -->
                 <div class="vitality-grid">
                     <div class="vital-box">
                         <span style="font-size: 0.95rem; font-weight: bold; opacity: 0.8; letter-spacing: 0.5px;">HEALTH POINTS</span>
@@ -254,6 +291,14 @@
                         <span style="font-size: 0.95rem; font-weight: bold; opacity: 0.8; letter-spacing: 0.5px;">GOLD PIECES</span>
                         <span id="display-gold" class="vital-display-value">0</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Class Abilities Ledger Panel -->
+            <div class="parchment-sheet wiggle-ui sheet-roll-target">
+                <h3 style="margin-top: 0; margin-bottom: 15px; font-weight: bold; letter-spacing: 0.5px; font-size: 1.3rem; border-bottom: 2px solid var(--dark-text); padding-bottom: 4px;">Class Abilities</h3>
+                <div id="abilities-target-list">
+                    <p style="opacity: 0.5; font-style: italic;">Reading spellbook scrolls...</p>
                 </div>
             </div>
 
@@ -328,7 +373,6 @@
         window.safeNavigate = (targetUrl) => {
             localStorage.setItem('returningFromCharacter', 'true');
             
-            // Apply structural roll-up closing transformation to all active sheets
             document.querySelectorAll('.sheet-roll-target').forEach(sheet => {
                 sheet.classList.add('roll-closed');
             });
@@ -339,7 +383,6 @@
             setTimeout(() => { window.location.href = targetUrl; }, 440);
         };
 
-        // Real-time Firestore document parsing and binding
         function bindCharacterRealtimeStream(id) {
             if (unsubscribeLiveSync) unsubscribeLiveSync();
 
@@ -361,10 +404,39 @@
                         if (targetEl) targetEl.innerText = val;
                     }
                 }
+
+                // Process and map Class Abilities dynamically from firestore doc mapping
+                const abilitiesContainer = document.getElementById('abilities-target-list');
+                abilitiesContainer.innerHTML = '';
+
+                if (data.abilities && data.abilities.length > 0) {
+                    data.abilities.forEach(ability => {
+                        const row = document.createElement('div');
+                        row.className = 'ability-row';
+
+                        // Check if optional uses parameter is explicitly specified in your Firestore backend console
+                        let usesMarkup = '';
+                        if (ability.uses !== undefined && ability.uses !== null) {
+                            usesMarkup = `<span class="ability-uses-tag">Uses Remaining: ${ability.uses}</span>`;
+                        }
+
+                        row.innerHTML = `
+                            <div class="ability-header">
+                                <span>✨ ${ability.title}</span>
+                                ${usesMarkup}
+                            </div>
+                            <p style="margin: 5px 0 0 0; font-size: 1.05rem; opacity: 0.85; line-height: 1.35;">
+                                ${ability.description}
+                            </p>
+                        `;
+                        abilitiesContainer.appendChild(row);
+                    });
+                } else {
+                    abilitiesContainer.innerHTML = `<p style="opacity: 0.5; font-style: italic; margin: 5px 0 0 0;">No active core features found on this character sheet.</p>`;
+                }
             });
         }
 
-        // Checks if device owns multiple campaign profiles to render switcher module
         async function discoverDeviceRoster() {
             if (!deviceId) return;
             
@@ -378,7 +450,7 @@
                 const querySnapshot = await getDocs(q);
                 if (querySnapshot.size > 1) {
                     const selectEl = document.getElementById('character-select-dropdown');
-                    selectEl.innerHTML = ''; // Reset UI
+                    selectEl.innerHTML = '';
                     
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
@@ -389,13 +461,11 @@
                         selectEl.appendChild(opt);
                     });
 
-                    // Handle switching profiles via cross-bind logic
                     selectEl.addEventListener('change', (e) => {
                         const newCharacterId = e.target.value;
                         localStorage.setItem('currentCharacterId', newCharacterId);
                         characterId = newCharacterId;
                         
-                        // Flash background color overlay slightly to convey active update
                         const flash = document.getElementById('color-flash');
                         flash.style.opacity = '0.8';
                         setTimeout(() => {

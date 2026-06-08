@@ -15,7 +15,6 @@
             --sketch-font: 'Patrick Hand', 'Segoe UI', cursive;
         }
         
-        /* Dark-Reddish Orange Table Environment */
         .table-bg {
             position: fixed;
             inset: 0;
@@ -45,7 +44,6 @@
             transition: opacity 0.4s ease;
         }
 
-        /* ====================== THE SQUIGGLEVISION ENGINE ====================== */
         @keyframes sketchWiggle {
             0% { filter: url('#sketch-1'); }
             25% { filter: url('#sketch-2'); }
@@ -68,7 +66,6 @@
             color: var(--dark-text);
         }
 
-        /* Bright Peachish-Orange Parchment Sheet */
         .parchment-sheet {
             background: var(--parchment-bright);
             border: 3px solid var(--accent-ink);
@@ -85,7 +82,6 @@
             overflow: visible;
         }
 
-        /* Scroll Roll-up Mechanical Closure Effect */
         .parchment-sheet.roll-closed {
             max-height: 0 !important;
             padding-top: 0 !important;
@@ -385,6 +381,23 @@
         let pointsPool = 6;
         const currentStats = { str: 2, dex: 2, con: 2, int: 2, wis: 2, cha: 2 };
 
+        // Pre-defined basic abilities block matching specifications
+        const starterAbilities = {
+            "Warrior": [
+                { title: "Second Wind", description: "Inhale deeply during the heat of battle to recover structural stamina.", uses: 1 }
+            ],
+            "Mage": [
+                { title: "Arcane Recovery", description: "Commune with your spellbook during a brief rest to recall expended magic.", uses: 1 },
+                { title: "Spellcasting", description: "Manipulate the fabric of the weave to manifest minor wizardry tricks." }
+            ],
+            "Rogue": [
+                { title: "Sneak Attack", description: "Exploit an opponent's distraction to deal vicious, tactical precision strikes." }
+            ],
+            "Cleric": [
+                { title: "Channel Divinity", description: "Directly invoke the raw authority of your deity to turn back unholy forces.", uses: 1 }
+            ]
+        };
+
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('color-flash').style.opacity = '0';
@@ -397,7 +410,6 @@
                 localStorage.setItem('returningFromCharacter', 'true');
             }
             
-            // Fire layout closing collapse roll animation alongside visual orange transition
             document.getElementById('scroll-sheet').classList.add('roll-closed');
             const flash = document.getElementById('color-flash');
             flash.style.opacity = '1';
@@ -438,6 +450,7 @@
                 return;
             }
 
+            const chosenClass = document.getElementById('char-class').value;
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;
             submitBtn.innerText = "Writing Journal...";
@@ -446,11 +459,11 @@
                 deviceId: deviceId,
                 campaign: "The Treasure in Ervan's Keep",
                 name: document.getElementById('char-name').value,
-                class: document.getElementById('char-class').value,
+                class: chosenClass,
                 stats: currentStats,
-                // Starting health rule reassigned to: Constitution + Dexterity
                 hp: currentStats.con + currentStats.dex, 
-                gold: 15
+                gold: 15,
+                abilities: starterAbilities[chosenClass] || []
             };
 
             try {
