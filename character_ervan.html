@@ -95,7 +95,7 @@
 
         /* Horizontal Tab Buttons Setup */
         .roster-tabs-container {
-            display: none; /* Shown via JS if multiple chars exist */
+            display: none; 
             flex-direction: row;
             flex-wrap: wrap;
             gap: 12px;
@@ -105,7 +105,7 @@
 
         .roster-tab-btn {
             background: rgba(0, 0, 0, 0.3);
-            border: 2px dashed rgba(255, 181, 125, 0.5); /* Faded parchment color */
+            border: 2px dashed rgba(255, 181, 125, 0.5); 
             border-radius: 8px;
             padding: 8px 16px;
             font-family: 'Architects Daughter', sans-serif;
@@ -236,6 +236,52 @@
         .exit-btn:active {
             background: rgba(0,0,0,0.1);
         }
+
+        /* Notes Section Additions */
+        .handwritten-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.45);
+            border: 2px solid var(--accent-ink);
+            border-radius: 4px 12px 4px 14px/12px 4px 14px 4px;
+            color: var(--dark-text);
+            padding: 10px 14px;
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: var(--sketch-font);
+            font-weight: bold;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .handwritten-input:focus {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .primary-btn.sketch-btn {
+            background: var(--dark-text);
+            border: 2px solid var(--accent-ink);
+            border-radius: 10px 100px 12px 90px/90px 12px 100px 10px;
+            font-family: var(--sketch-font);
+            color: var(--parchment-bright);
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .primary-btn.sketch-btn:hover:not(:disabled) {
+            background: var(--accent-ink);
+        }
+
+        .primary-btn.sketch-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -335,12 +381,19 @@
                 </div>
             </div>
 
+            <!-- Notes Ledger Panel -->
+            <div class="parchment-sheet wiggle-ui sheet-roll-target">
+                <h3 style="margin-top: 0; margin-bottom: 15px; font-weight: bold; letter-spacing: 0.5px; font-size: 1.3rem; border-bottom: 2px solid var(--dark-text); padding-bottom: 4px;">Adventurer's Journal</h3>
+                <textarea id="char-notes" class="handwritten-input" rows="4" placeholder="Scribble your loot, grudges, and quest clues here..."></textarea>
+                <button type="button" id="save-notes-btn" class="primary-btn sketch-btn" onclick="saveNotes()">Record Notes</button>
+            </div>
+
         </main>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -385,6 +438,36 @@
             setTimeout(() => { window.location.href = targetUrl; }, 440);
         };
 
+        window.saveNotes = async () => {
+            if (!characterId) return;
+
+            const btn = document.getElementById('save-notes-btn');
+            const originalText = btn.innerText;
+            const notesContent = document.getElementById('char-notes').value;
+            
+            btn.innerText = "Scribbling...";
+            btn.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "characters", characterId), {
+                    notes: notesContent
+                });
+                
+                btn.innerText = "Notes Recorded!";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            } catch (error) {
+                console.error("Error saving notes: ", error);
+                btn.innerText = "Error Saving!";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 2500);
+            }
+        };
+
         function bindCharacterRealtimeStream(id) {
             if (unsubscribeLiveSync) unsubscribeLiveSync();
 
@@ -400,6 +483,12 @@
                 document.getElementById('display-hp').innerText = data.hp ?? 0;
                 document.getElementById('display-gold').innerText = data.gold ?? 0;
 
+                // Only update the notes textarea if the user isn't currently typing in it
+                const notesEl = document.getElementById('char-notes');
+                if (document.activeElement !== notesEl) {
+                    notesEl.value = data.notes || '';
+                }
+
                 if (data.stats) {
                     for (const [stat, val] of Object.entries(data.stats)) {
                         const targetEl = document.getElementById(`val-${stat}`);
@@ -407,7 +496,6 @@
                     }
                 }
 
-                // Process and map Class Abilities dynamically from firestore doc mapping
                 const abilitiesContainer = document.getElementById('abilities-target-list');
                 abilitiesContainer.innerHTML = '';
 
@@ -459,15 +547,13 @@
                         btn.className = 'roster-tab-btn';
                         btn.innerText = data.name;
 
-                        // Mark active if matches current
                         if (docSnap.id === characterId) {
                             btn.classList.add('active-tab');
                         }
 
                         btn.addEventListener('click', () => {
-                            if (docSnap.id === characterId) return; // Ignore if already selected
+                            if (docSnap.id === characterId) return; 
                             
-                            // Highlight new active tab immediately
                             document.querySelectorAll('.roster-tab-btn').forEach(b => b.classList.remove('active-tab'));
                             btn.classList.add('active-tab');
 
@@ -475,15 +561,12 @@
                             localStorage.setItem('currentCharacterId', newCharacterId);
                             characterId = newCharacterId;
                             
-                            // Trigger Roll-Up animation for all visible sections
                             const sheets = document.querySelectorAll('.sheet-roll-target');
                             sheets.forEach(sheet => sheet.classList.add('roll-closed'));
 
-                            // Wait for roll transition (450ms), swap data, and unroll
                             setTimeout(() => {
                                 bindCharacterRealtimeStream(newCharacterId);
                                 
-                                // Brief delay to ensure DOM parses the new layout height properly before unrolling
                                 setTimeout(() => {
                                     sheets.forEach(sheet => sheet.classList.remove('roll-closed'));
                                 }, 50);
@@ -493,7 +576,6 @@
                         tabsContainer.appendChild(btn);
                     });
 
-                    // Reveal tab container
                     tabsContainer.style.display = 'flex';
                 }
             } catch(err) {
