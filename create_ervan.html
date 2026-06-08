@@ -9,18 +9,19 @@
         @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Patrick+Hand&display=swap');
 
         :root {
-            --accent-glow: #ff6b00;
-            --ink-dark: #1f0b00;
+            --accent-ink: #8a3300;
+            --dark-text: #210a00;
+            --parchment-bright: #ffb57d;
             --sketch-font: 'Patrick Hand', 'Segoe UI', cursive;
         }
         
-        /* Wooden Table Environment */
+        /* Dark-Reddish Orange Table Environment */
         .table-bg {
             position: fixed;
             inset: 0;
             background: 
-                linear-gradient(90deg, rgba(0,0,0,0.4) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.4) 161px),
-                radial-gradient(circle at 50% 20%, #221003 0%, #0e0501 70%, #000000 100%);
+                linear-gradient(90deg, rgba(0,0,0,0.45) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.45) 161px),
+                radial-gradient(circle at 50% 20%, #4a1204 0%, #240500 75%, #0f0100 100%);
             background-size: 160px 100%, 100% 100%;
             z-index: -2;
             pointer-events: none;
@@ -29,7 +30,7 @@
         .amber-torchlight {
             position: fixed;
             inset: 0;
-            background: radial-gradient(circle at 50% 40%, rgba(255, 107, 0, 0.06) 0%, transparent 80%);
+            background: radial-gradient(circle at 50% 40%, rgba(255, 77, 0, 0.08) 0%, transparent 75%);
             z-index: -1;
             pointer-events: none;
         }
@@ -53,7 +54,6 @@
             100% { filter: url('#sketch-1'); }
         }
 
-        /* Applying the redrawn line charm to the paper, borders, and hand-written font styles */
         .wiggle-ui {
             animation: sketchWiggle 0.35s step-end infinite;
         }
@@ -65,54 +65,72 @@
             padding: 15px;
             box-sizing: border-box;
             font-family: var(--sketch-font);
-            color: #ffeedd;
+            color: var(--dark-text);
         }
 
-        /* Hand-cut Parchment Paper Styling */
+        /* Bright Peachish-Orange Parchment Sheet */
         .parchment-sheet {
-            background: #140b04;
-            /* Uneven borders trick combined with the SVG filter makes it look cut from an old scroll */
-            border: 3px solid rgba(255, 107, 0, 0.6);
+            background: var(--parchment-bright);
+            border: 3px solid var(--accent-ink);
             border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
             padding: 35px 25px;
             box-shadow: 
-                0 15px 35px rgba(0, 0, 0, 0.9),
-                inset 0 0 40px rgba(255, 107, 0, 0.05);
+                0 18px 40px rgba(0, 0, 0, 0.75),
+                inset 0 0 30px rgba(255, 255, 255, 0.3);
             position: relative;
+            transform-origin: top center;
+            max-height: 2000px;
+            opacity: 1;
+            transition: max-height 0.45s cubic-bezier(0.4, 0, 1, 1), padding 0.45s ease, transform 0.45s ease, opacity 0.3s ease;
+            overflow: visible;
+        }
+
+        /* Scroll Roll-up Mechanical Closure Effect */
+        .parchment-sheet.roll-closed {
+            max-height: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            transform: scaleY(0);
+            opacity: 0;
+            overflow: hidden;
         }
 
         .sketch-title {
             font-family: 'Architects Daughter', sans-serif;
-            color: var(--accent-glow);
-            text-shadow: 0 0 10px rgba(255,107,0,0.2);
+            color: var(--dark-text);
             text-align: center;
             margin: 0 0 5px 0;
-            font-size: 2.2rem;
+            font-size: 2.3rem;
+            font-weight: bold;
         }
 
         .pool-counter {
-            border: 2px dashed rgba(255, 107, 0, 0.5);
+            border: 2px dashed var(--accent-ink);
             border-radius: 255px 15px 185px 15px/15px 185px 15px 255px;
             padding: 10px;
             text-align: center;
             margin-bottom: 25px;
-            font-size: 1.3rem;
-            background: rgba(255, 107, 0, 0.04);
+            font-size: 1.4rem;
+            background: rgba(255, 255, 255, 0.35);
+            font-weight: bold;
         }
 
         .stat-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 2px dashed rgba(255, 107, 0, 0.15);
+            border-bottom: 2px dashed rgba(138, 51, 0, 0.3);
             padding: 8px 10px;
             margin-bottom: 10px;
         }
 
         .stat-label {
-            font-size: 1.3rem;
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.9);
+            font-size: 1.35rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            color: var(--dark-text);
         }
 
         .stat-controls {
@@ -121,12 +139,11 @@
             gap: 15px;
         }
 
-        /* Custom Touch-Target Hand-Drawn Buttons */
         .arrow-btn {
-            background: rgba(255, 107, 0, 0.1);
-            border: 2px solid rgba(255, 107, 0, 0.5);
+            background: rgba(255, 255, 255, 0.4);
+            border: 2px solid var(--accent-ink);
             border-radius: 50% 10px 50% 12px/12px 50% 12px 50%;
-            color: var(--accent-glow);
+            color: var(--dark-text);
             width: 42px;
             height: 42px;
             cursor: pointer;
@@ -141,79 +158,98 @@
 
         .arrow-btn:active {
             transform: scale(0.9);
-            background: rgba(255, 107, 0, 0.3);
+            background: var(--accent-ink);
+            color: var(--parchment-bright);
         }
 
         .arrow-btn:disabled {
-            opacity: 0.15;
+            opacity: 0.25;
             cursor: not-allowed;
-            border-color: rgba(255,255,255,0.1);
-            color: white;
+            border-color: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.05);
         }
 
         .stat-display-value {
-            font-size: 1.8rem;
+            font-size: 1.9rem;
             font-weight: bold;
             min-width: 28px;
             text-align: center;
             font-family: 'Architects Daughter', sans-serif;
-            color: #ffffff;
+            color: var(--accent-ink);
         }
 
         .sketch-input-label {
             display: block;
             margin-top: 15px;
             margin-bottom: 5px;
-            font-size: 1.1rem;
-            color: var(--accent-glow);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--dark-text);
         }
 
         .handwritten-input {
             width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid rgba(255, 107, 0, 0.4);
+            background: rgba(255, 255, 255, 0.45);
+            border: 2px solid var(--accent-ink);
             border-radius: 4px 12px 4px 14px/12px 4px 14px 4px;
-            color: white;
+            color: var(--dark-text);
             padding: 10px 14px;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             margin-bottom: 15px;
             outline: none;
             box-sizing: border-box;
             font-family: var(--sketch-font);
+            font-weight: bold;
+        }
+
+        .handwritten-input::placeholder {
+            color: rgba(0, 0, 0, 0.45);
         }
 
         .handwritten-input:focus {
-            border-color: var(--accent-glow);
-            background: rgba(255, 107, 0, 0.05);
+            background: rgba(255, 255, 255, 0.7);
         }
 
         select.handwritten-input option {
-            background: #140b04;
-            color: white;
+            background: var(--parchment-bright);
+            color: var(--dark-text);
         }
 
-        /* Customizing primary button archetype to match style guidelines */
         .primary-btn.sketch-btn {
-            background: transparent;
-            border: 2px solid var(--accent-glow);
+            background: var(--dark-text);
+            border: 2px solid var(--accent-ink);
             border-radius: 10px 100px 12px 90px/90px 12px 100px 10px;
             font-family: var(--sketch-font);
-            color: white;
-            font-size: 1.4rem;
+            color: var(--parchment-bright);
+            font-size: 1.45rem;
+            font-weight: bold;
             cursor: pointer;
             padding: 12px;
             margin-top: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+            width: 100%;
         }
         .primary-btn.sketch-btn:hover:not(:disabled) {
-            background: rgba(255, 107, 0, 0.15);
-            transform: translateY(-1px);
+            background: var(--accent-ink);
+        }
+
+        .secondary-btn.sketch-alt {
+            background: transparent;
+            border: 2px dashed var(--dark-text);
+            color: var(--dark-text);
+            font-family: inherit;
+            font-size: 1.15rem;
+            font-weight: bold;
+            margin-top: 20px;
+            width: 100%;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Dynamic SVG Turbulence Matrix used to manipulate vectors for the line wiggle -->
     <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
         <defs>
             <filter id="sketch-1">
@@ -241,14 +277,14 @@
 
     <div id="app-container">
         <main class="creation-flow">
-            <div class="parchment-sheet wiggle-ui">
+            <div id="scroll-sheet" class="parchment-sheet wiggle-ui">
                 <h1 class="sketch-title">Forge an Adventurer</h1>
-                <p style="text-align: center; opacity: 0.5; margin-bottom: 20px; font-size: 0.95rem; letter-spacing: 1px;">
+                <p style="text-align: center; font-weight: bold; opacity: 0.7; margin-bottom: 20px; font-size: 0.95rem; letter-spacing: 1px;">
                     THE TREASURE IN ERVAN'S KEEP
                 </p>
 
                 <div class="pool-counter">
-                    Points Remaining: <strong id="pool-display" style="color: var(--accent-glow); font-family: 'Architects Daughter';">6</strong>
+                    Points Remaining: <strong id="pool-display" style="color: var(--accent-ink); font-family: 'Architects Daughter';">6</strong>
                 </div>
 
                 <form id="character-form">
@@ -264,10 +300,9 @@
                         <option value="Cleric">Cleric</option>
                     </select>
 
-                    <h3 class="sketch-input-label" style="margin-top: 20px; font-size: 1.2rem;">Core Attributes (Min 1 / Max 6)</h3>
+                    <h3 class="sketch-input-label" style="margin-top: 25px; font-size: 1.25rem; border-bottom: 2px solid var(--dark-text); padding-bottom: 4px;">Core Attributes</h3>
                     
                     <div id="attributes-container">
-                        <!-- STR -->
                         <div class="stat-row">
                             <span class="stat-label">STRENGTH</span>
                             <div class="stat-controls">
@@ -276,7 +311,6 @@
                                 <button type="button" class="arrow-btn" onclick="adjustStat('str', 1)">▶</button>
                             </div>
                         </div>
-                        <!-- DEX -->
                         <div class="stat-row">
                             <span class="stat-label">DEXTERITY</span>
                             <div class="stat-controls">
@@ -285,7 +319,6 @@
                                 <button type="button" class="arrow-btn" onclick="adjustStat('dex', 1)">▶</button>
                             </div>
                         </div>
-                        <!-- CON -->
                         <div class="stat-row">
                             <span class="stat-label">CONSTITUTION</span>
                             <div class="stat-controls">
@@ -294,7 +327,6 @@
                                 <button type="button" class="arrow-btn" onclick="adjustStat('con', 1)">▶</button>
                             </div>
                         </div>
-                        <!-- INT -->
                         <div class="stat-row">
                             <span class="stat-label">INTELLIGENCE</span>
                             <div class="stat-controls">
@@ -303,7 +335,6 @@
                                 <button type="button" class="arrow-btn" onclick="adjustStat('int', 1)">▶</button>
                             </div>
                         </div>
-                        <!-- WIS -->
                         <div class="stat-row">
                             <span class="stat-label">WISDOM</span>
                             <div class="stat-controls">
@@ -312,7 +343,6 @@
                                 <button type="button" class="arrow-btn" onclick="adjustStat('wis', 1)">▶</button>
                             </div>
                         </div>
-                        <!-- CHA -->
                         <div class="stat-row">
                             <span class="stat-label">CHARISMA</span>
                             <div class="stat-controls">
@@ -323,11 +353,11 @@
                         </div>
                     </div>
 
-                    <button type="submit" id="submit-btn" class="primary-btn sketch-btn" style="width: 100%;">
+                    <button type="submit" id="submit-btn" class="primary-btn sketch-btn">
                         Sign the Scroll
                     </button>
                     
-                    <button type="button" class="secondary-btn" style="margin-top: 20px; width: 100%; text-align: center; font-family: inherit; font-size: 1.1rem;" onclick="safeNavigate('index.html')">
+                    <button type="button" class="secondary-btn sketch-alt" onclick="safeNavigate('index.html')">
                         Abandon Quest
                     </button>
                 </form>
@@ -352,7 +382,6 @@
         const db = getFirestore(app);
         const deviceId = localStorage.getItem('device_uuid');
 
-        // Dynamic State (Starts at 2 per stat, pool of 6 points)
         let pointsPool = 6;
         const currentStats = { str: 2, dex: 2, con: 2, int: 2, wis: 2, cha: 2 };
 
@@ -367,9 +396,13 @@
             if (targetUrl === 'index.html') {
                 localStorage.setItem('returningFromCharacter', 'true');
             }
+            
+            // Fire layout closing collapse roll animation alongside visual orange transition
+            document.getElementById('scroll-sheet').classList.add('roll-closed');
             const flash = document.getElementById('color-flash');
             flash.style.opacity = '1';
-            setTimeout(() => { window.location.href = targetUrl; }, 420);
+            
+            setTimeout(() => { window.location.href = targetUrl; }, 440);
         };
 
         window.adjustStat = (stat, direction) => {
@@ -400,7 +433,6 @@
 
         document.getElementById('character-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             if (pointsPool > 0) {
                 alert(`You must spend your remaining ${pointsPool} attribute points!`);
                 return;
@@ -416,7 +448,8 @@
                 name: document.getElementById('char-name').value,
                 class: document.getElementById('char-class').value,
                 stats: currentStats,
-                hp: 10 + currentStats.con, 
+                // Starting health rule reassigned to: Constitution + Dexterity
+                hp: currentStats.con + currentStats.dex, 
                 gold: 15
             };
 

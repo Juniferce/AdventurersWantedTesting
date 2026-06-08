@@ -9,16 +9,19 @@
         @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Patrick+Hand&display=swap');
 
         :root {
-            --accent-glow: #ff6b00;
+            --accent-ink: #8a3300;
+            --dark-text: #210a00;
+            --parchment-bright: #ffb57d;
             --sketch-font: 'Patrick Hand', 'Segoe UI', cursive;
         }
 
+        /* Dark-Reddish Orange Table Environment */
         .table-bg {
             position: fixed;
             inset: 0;
             background: 
-                linear-gradient(90deg, rgba(0,0,0,0.4) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.4) 161px),
-                radial-gradient(circle at 50% 20%, #221003 0%, #0e0501 70%, #000000 100%);
+                linear-gradient(90deg, rgba(0,0,0,0.45) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.45) 161px),
+                radial-gradient(circle at 50% 20%, #4a1204 0%, #240500 75%, #0f0100 100%);
             background-size: 160px 100%, 100% 100%;
             z-index: -2;
             pointer-events: none;
@@ -54,32 +57,81 @@
             padding: 10px;
             box-sizing: border-box;
             font-family: var(--sketch-font);
-            color: #ffeedd;
+            color: var(--dark-text);
         }
 
+        /* Bright Peachish-Orange Parchment Sheet Modules */
         .parchment-sheet {
-            background: #140b04;
-            border: 3px solid rgba(255, 107, 0, 0.5);
+            background: var(--parchment-bright);
+            border: 3px solid var(--accent-ink);
             border-radius: 12px 255px 15px 195px/225px 15px 255px 12px;
             padding: 24px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(255, 255, 255, 0.25);
             margin-bottom: 20px;
+            transform-origin: top center;
+            max-height: 1200px;
+            opacity: 1;
+            transition: max-height 0.45s cubic-bezier(0.4, 0, 1, 1), padding 0.45s ease, transform 0.45s ease, opacity 0.3s ease;
+        }
+
+        /* Scroll Roll-up Mechanical Closure Effect */
+        .parchment-sheet.roll-closed {
+            max-height: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            transform: scaleY(0);
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        /* Multiple Character Switcher Dropdown Styling */
+        .roster-switcher-box {
+            background: rgba(255, 255, 255, 0.4);
+            border: 2px dashed var(--accent-ink);
+            border-radius: 4px 10px 4px 10px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            display: none; /* Display is enabled via script when multiple profiles exist */
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .roster-select {
+            background: transparent;
+            border: 1px solid var(--accent-ink);
+            font-family: var(--sketch-font);
+            color: var(--dark-text);
+            font-size: 1.15rem;
+            font-weight: bold;
+            padding: 4px;
+            cursor: pointer;
+            outline: none;
+            max-width: 60%;
+        }
+
+        .roster-select option {
+            background: var(--parchment-bright);
+            color: var(--dark-text);
         }
 
         .header-block {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px dashed rgba(255, 107, 0, 0.2);
+            border-bottom: 2px dashed rgba(138, 51, 0, 0.4);
             padding-bottom: 12px;
             margin-bottom: 18px;
         }
 
         .char-title {
             font-family: 'Architects Daughter', sans-serif;
-            color: var(--accent-glow);
+            color: var(--dark-text);
             margin: 0;
-            font-size: 1.9rem;
+            font-size: 2rem;
+            font-weight: bold;
         }
 
         .vitality-grid {
@@ -88,38 +140,22 @@
             gap: 15px;
         }
 
+        /* Read-only vital container display configuration */
         .vital-box {
-            background: rgba(0,0,0,0.2);
-            border: 2px solid rgba(255, 107, 0, 0.25);
+            background: rgba(255, 255, 255, 0.35);
+            border: 2px solid var(--accent-ink);
             border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-            padding: 12px;
+            padding: 16px 12px;
             text-align: center;
         }
 
-        .vital-control-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
+        .vital-display-value {
+            font-size: 2.4rem;
+            font-family: 'Architects Daughter', sans-serif;
+            font-weight: bold;
+            display: block;
             margin-top: 5px;
-        }
-
-        .sheet-arrow-btn {
-            background: rgba(255, 107, 0, 0.05);
-            border: 2px solid rgba(255, 107, 0, 0.4);
-            color: white;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: inherit;
-        }
-        .sheet-arrow-btn:active {
-            background: var(--accent-glow);
+            color: var(--dark-text);
         }
 
         .attribute-layout-grid {
@@ -129,8 +165,8 @@
         }
 
         .attribute-card {
-            background: rgba(0, 0, 0, 0.25);
-            border: 2px solid rgba(255, 107, 0, 0.2);
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(138, 51, 0, 0.4);
             border-radius: 8px 4px 10px 4px/4px 10px 4px 8px;
             padding: 10px 4px;
             text-align: center;
@@ -138,16 +174,30 @@
 
         .attr-score-big {
             font-family: 'Architects Daughter', sans-serif;
-            font-size: 2.1rem;
+            font-size: 2.2rem;
             font-weight: bold;
-            color: var(--accent-glow);
+            color: var(--accent-ink);
             margin: 2px 0;
+        }
+
+        .exit-btn {
+            background: transparent;
+            border: 2px solid var(--dark-text);
+            border-radius: 6px;
+            color: var(--dark-text);
+            padding: 6px 12px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .exit-btn:active {
+            background: rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
 
-    <!-- Unique Displacement Matrix Vectors matching the creation page layout definitions -->
     <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
         <defs>
             <filter id="sheet-sketch-1">
@@ -175,63 +225,64 @@
     <div id="app-container">
         <main class="sheet-container">
             
-            <!-- Ledger Master Block -->
-            <div class="parchment-sheet wiggle-ui">
+            <!-- Shared Ledger Frame -->
+            <div class="parchment-sheet wiggle-ui sheet-roll-target">
+                
+                <!-- Cross-Character Matrix Tab Selector -->
+                <div id="roster-switcher" class="roster-switcher-box">
+                    <span style="font-weight: bold; font-size: 1.05rem;">📜 Active Profile:</span>
+                    <select id="character-select-dropdown" class="roster-select">
+                        <!-- Options injected dynamically via runtime script context -->
+                    </select>
+                </div>
+
                 <div class="header-block">
                     <div>
                         <h1 id="display-name" class="char-title">Loading...</h1>
-                        <p id="display-class" style="margin: 4px 0 0 0; opacity: 0.6; font-size: 1rem; letter-spacing: 1px;"></p>
+                        <p id="display-class" style="margin: 4px 0 0 0; font-weight: bold; opacity: 0.7; font-size: 1.05rem; letter-spacing: 0.5px;"></p>
                     </div>
-                    <button class="secondary-btn" style="font-family: inherit; font-size: 1.1rem;" onclick="safeNavigate('index.html')">Exit Table</button>
+                    <button class="exit-btn" onclick="safeNavigate('index.html')">Exit Table</button>
                 </div>
 
-                <!-- Live Vitals Tracker -->
+                <!-- Live Vitals Tracker (Read-Only Interface Modification) -->
                 <div class="vitality-grid">
                     <div class="vital-box">
-                        <span style="font-size: 0.9rem; opacity: 0.6; letter-spacing: 1px;">HEALTH POINTS</span>
-                        <div class="vital-control-row">
-                            <button class="sheet-arrow-btn" onclick="adjustVital('hp', -1)">-</button>
-                            <span id="display-hp" style="font-size: 1.9rem; font-family: 'Architects Daughter'; font-weight: bold; min-width: 32px;">0</span>
-                            <button class="sheet-arrow-btn" onclick="adjustVital('hp', 1)">+</button>
-                        </div>
+                        <span style="font-size: 0.95rem; font-weight: bold; opacity: 0.8; letter-spacing: 0.5px;">HEALTH POINTS</span>
+                        <span id="display-hp" class="vital-display-value">0</span>
                     </div>
                     <div class="vital-box">
-                        <span style="font-size: 0.9rem; opacity: 0.6; letter-spacing: 1px;">GOLD PIECES</span>
-                        <div class="vital-control-row">
-                            <button class="sheet-arrow-btn" onclick="adjustVital('gold', -1)">-</button>
-                            <span id="display-gold" style="font-size: 1.9rem; font-family: 'Architects Daughter'; font-weight: bold; min-width: 32px;">0</span>
-                            <button class="sheet-arrow-btn" onclick="adjustVital('gold', 1)">+</button>
-                        </div>
+                        <span style="font-size: 0.95rem; font-weight: bold; opacity: 0.8; letter-spacing: 0.5px;">GOLD PIECES</span>
+                        <span id="display-gold" class="vital-display-value">0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Core Attribute Panel -->
-            <div class="parchment-sheet wiggle-ui">
-                <h3 style="margin-top: 0; margin-bottom: 15px; font-weight: 400; letter-spacing: 1px; color: var(--accent-glow); font-size: 1.2rem;">Core Attributes</h3>
+            <!-- Core Attribute Ledger Panel -->
+            <div class="parchment-sheet wiggle-ui sheet-roll-target">
+                <h3 style="margin-top: 0; margin-bottom: 15px; font-weight: bold; letter-spacing: 0.5px; font-size: 1.3rem; border-bottom: 2px solid var(--dark-text); padding-bottom: 4px;">Core Attributes</h3>
                 <div class="attribute-layout-grid">
                     <div class="attribute-card">
-                        <div style="font-size: 0.85rem; opacity: 0.6;">STR</div>
+                        <div style="font-size: 0.9rem; font-weight: bold; opacity: 0.7;">STR</div>
                         <div class="attr-score-big" id="val-str">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.85rem; opacity: 0.6;">DEX</div>
+                        <div style="font-size: 0.9rem; font-weight: bold; opacity: 0.7;">DEX</div>
                         <div class="attr-score-big" id="val-dex">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.85rem; opacity: 0.6;">CON</div>
+                        <div style="font-size: 0.9rem; font-weight: bold; opacity: 0.7;">CON</div>
                         <div class="attr-score-big" id="val-con">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.85rem; opacity: 0.6;">INT</div>
+                        <div style="font-size: 0.9rem; font-weight: bold; opacity: 0.7;">INT</div>
                         <div class="attr-score-big" id="val-int">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.85rem; opacity: 0.6;">WIS</div>
+                        <div style="font-size: 0.9rem; font-weight: bold; opacity: 0.7;">WIS</div>
                         <div class="attr-score-big" id="val-wis">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.85rem; opacity: 0.6;">CHA</div>
+                        <div style="font-size: 0.9rem; font-weight: bold; opacity: 0.7;">CHA</div>
                         <div class="attr-score-big" id="val-cha">-</div>
                     </div>
                 </div>
@@ -242,7 +293,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -255,62 +306,110 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const characterId = localStorage.getItem('currentCharacterId');
         
-        let localCharacterData = null;
+        let characterId = localStorage.getItem('currentCharacterId');
+        const deviceId = localStorage.getItem('device_uuid');
+        let unsubscribeLiveSync = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('color-flash').style.opacity = '0';
             }, 50);
+            
+            if (!characterId) {
+                window.location.href = "index.html";
+                return;
+            }
+            
+            bindCharacterRealtimeStream(characterId);
+            discoverDeviceRoster();
         });
 
         window.safeNavigate = (targetUrl) => {
             localStorage.setItem('returningFromCharacter', 'true');
+            
+            // Apply structural roll-up closing transformation to all active sheets
+            document.querySelectorAll('.sheet-roll-target').forEach(sheet => {
+                sheet.classList.add('roll-closed');
+            });
+            
             const flash = document.getElementById('color-flash');
             flash.style.opacity = '1';
-            setTimeout(() => { window.location.href = targetUrl; }, 420);
+            
+            setTimeout(() => { window.location.href = targetUrl; }, 440);
         };
 
-        if (!characterId) {
-            window.location.href = "index.html";
+        // Real-time Firestore document parsing and binding
+        function bindCharacterRealtimeStream(id) {
+            if (unsubscribeLiveSync) unsubscribeLiveSync();
+
+            unsubscribeLiveSync = onSnapshot(doc(db, "characters", id), (docSnap) => {
+                if (!docSnap.exists()) {
+                    window.location.href = "index.html";
+                    return;
+                }
+
+                const data = docSnap.data();
+                document.getElementById('display-name').innerText = data.name;
+                document.getElementById('display-class').innerText = data.class;
+                document.getElementById('display-hp').innerText = data.hp ?? 0;
+                document.getElementById('display-gold').innerText = data.gold ?? 0;
+
+                if (data.stats) {
+                    for (const [stat, val] of Object.entries(data.stats)) {
+                        const targetEl = document.getElementById(`val-${stat}`);
+                        if (targetEl) targetEl.innerText = val;
+                    }
+                }
+            });
         }
 
-        // Live Real-Time Document Synchronization
-        onSnapshot(doc(db, "characters", characterId), (docSnap) => {
-            if (!docSnap.exists()) {
-                window.location.href = "index.html";
-                return;
-            }
-
-            const data = docSnap.data();
-            localCharacterData = data;
-
-            document.getElementById('display-name').innerText = data.name;
-            document.getElementById('display-class').innerText = data.class;
-            document.getElementById('display-hp').innerText = data.hp ?? 0;
-            document.getElementById('display-gold').innerText = data.gold ?? 0;
-
-            if (data.stats) {
-                for (const [stat, val] of Object.entries(data.stats)) {
-                    const targetEl = document.getElementById(`val-${stat}`);
-                    if (targetEl) targetEl.innerText = val;
-                }
-            }
-        });
-
-        window.adjustVital = async (field, amount) => {
-            if (!localCharacterData) return;
-            const targetVal = Math.max(0, (localCharacterData[field] ?? 0) + amount);
+        // Checks if device owns multiple campaign profiles to render switcher module
+        async function discoverDeviceRoster() {
+            if (!deviceId) return;
             
             try {
-                await updateDoc(doc(db, "characters", characterId), {
-                    [field]: targetVal
-                });
-            } catch(e) {
-                console.error("Failed to sync vital adjustment: ", e);
+                const q = query(
+                    collection(db, "characters"), 
+                    where("deviceId", "==", deviceId),
+                    where("campaign", "==", "The Treasure in Ervan's Keep")
+                );
+                
+                const querySnapshot = await getDocs(q);
+                if (querySnapshot.size > 1) {
+                    const selectEl = document.getElementById('character-select-dropdown');
+                    selectEl.innerHTML = ''; // Reset UI
+                    
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const opt = document.createElement('option');
+                        opt.value = doc.id;
+                        opt.innerText = `${data.name} (${data.class})`;
+                        if (doc.id === characterId) opt.selected = true;
+                        selectEl.appendChild(opt);
+                    });
+
+                    // Handle switching profiles via cross-bind logic
+                    selectEl.addEventListener('change', (e) => {
+                        const newCharacterId = e.target.value;
+                        localStorage.setItem('currentCharacterId', newCharacterId);
+                        characterId = newCharacterId;
+                        
+                        // Flash background color overlay slightly to convey active update
+                        const flash = document.getElementById('color-flash');
+                        flash.style.opacity = '0.8';
+                        setTimeout(() => {
+                            bindCharacterRealtimeStream(newCharacterId);
+                            flash.style.opacity = '0';
+                        }, 250);
+                    });
+
+                    document.getElementById('roster-switcher').style.display = 'flex';
+                }
+            } catch(err) {
+                console.error("Error drawing active roster: ", err);
             }
-        };
+        }
     </script>
 </body>
 </html>
