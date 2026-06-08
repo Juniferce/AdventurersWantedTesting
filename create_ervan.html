@@ -421,7 +421,7 @@
             const targetVal = currentStats[stat] + direction;
             
             if (direction === 1 && pointsPool <= 0) return;
-            if (targetVal < 1 || targetVal > 6) return;
+            if (targetVal < 1 || targetVal > 5) return;
 
             currentStats[stat] = targetVal;
             pointsPool -= direction;
@@ -438,7 +438,7 @@
                     row.innerText = value;
                     const btns = row.parentElement.querySelectorAll('.arrow-btn');
                     btns[0].disabled = (value <= 1);
-                    btns[1].disabled = (value >= 6 || pointsPool <= 0);
+                    btns[1].disabled = (value >= 5 || pointsPool <= 0);
                 }
             }
         }
