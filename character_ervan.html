@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Sheet - Ervan's Keep</title>
+    <link rel="stylesheet" href="base.css">
+    <style>
+        :root {
+            --accent-glow: #ff6b00;
+        }
+
+        .keep-bg {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top, #1c0e05 0%, #050201 80%, #000000 100%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .sheet-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .header-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .vitality-bar-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .vital-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .vital-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .vital-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vital-btn:hover { background: var(--accent-glow); }
+
+        .display-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .display-stat-box {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 107, 0, 0.15);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .mod-val {
+            font-size: 0.8rem;
+            color: var(--accent-glow);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="keep-bg"></div>
+
+    <div id="app-container">
+        <main class="sheet-container">
+            
+            <!-- Character Header -->
+            <div class="glass-card header-card" style="padding: 20px;">
+                <div>
+                    <h1 id="display-name" class="glow-text" style="text-align: left; margin: 0; font-size: 1.8rem;">Loading...</h1>
+                    <p id="display-class" style="margin: 5px 0 0 0; opacity: 0.6; letter-spacing: 1px;"></p>
+                </div>
+                <button class="secondary-btn" onclick="exitSheet()">Exit Sheet</button>
+            </div>
+
+            <!-- Vitals Row -->
+            <div class="vitality-bar-row">
+                <div class="vital-card">
+                    <span style="font-size: 0.8rem; opacity: 0.5; letter-spacing: 1px;">HEALTH POINTS</span>
+                    <div class="vital-value">
+                        <button class="vital-btn" onclick="adjustVital('hp', -1)">-</button>
+                        <span id="display-hp">0</span>
+                        <button class="vital-btn" onclick="adjustVital('hp', 1)">+</button>
+                    </div>
+                </div>
+                <div class="vital-card">
+                    <span style="font-size: 0.8rem; opacity: 0.5; letter-spacing: 1px;">GOLD PIECES</span>
+                    <div class="vital-value">
+                        <button class="vital-btn" onclick="adjustVital('gold', -1)">-</button>
+                        <span id="display-gold">0</span>
+                        <button class="vital-btn" onclick="adjustVital('gold', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Module -->
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <h3 style="margin-top: 0; margin-bottom: 15px; font-weight: 400; letter-spacing: 1px;">Attributes</h3>
+                <div class="display-stat-grid">
+                    <div class="display-stat-box">
+                        <div style="font-size: 0.75rem; opacity: 0.6;">STRENGTH</div>
+                        <div style="font-size: 1.4rem; font-weight: bold;" id="val-str">-</div>
+                        <div class="mod-val" id="mod-str"></div>
+                    </div>
+                    <div class="display-stat-box">
+                        <div style="font-size: 0.75rem; opacity: 0.6;">DEXTERITY</div>
+                        <div style="font-size: 1.4rem; font-weight: bold;" id="val-dex">-</div>
+                        <div class="mod-val" id="mod-dex"></div>
+                    </div>
+                    <div class="display-stat-box">
+                        <div style="font-size: 0.75rem; opacity: 0.6;">CONSTITUTION</div>
+                        <div style="font-size: 1.4rem; font-weight: bold;" id="val-con">-</div>
+                        <div class="mod-val" id="mod-con"></div>
+                    </div>
+                    <div class="display-stat-box">
+                        <div style="font-size: 0.75rem; opacity: 0.6;">INTELLIGENCE</div>
+                        <div style="font-size: 1.4rem; font-weight: bold;" id="val-int">-</div>
+                        <div class="mod-val" id="mod-int"></div>
+                    </div>
+                    <div class="display-stat-box">
+                        <div style="font-size: 0.75rem; opacity: 0.6;">WISDOM</div>
+                        <div style="font-size: 1.4rem; font-weight: bold;" id="val-wis">-</div>
+                        <div class="mod-val" id="mod-wis"></div>
+                    </div>
+                    <div class="display-stat-box">
+                        <div style="font-size: 0.75rem; opacity: 0.6;">CHARISMA</div>
+                        <div style="font-size: 1.4rem; font-weight: bold;" id="val-cha">-</div>
+                        <div class="mod-val" id="mod-cha"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Module -->
+            <div class="glass-card">
+                <h3 style="margin-top: 0; margin-bottom: 10px; font-weight: 400; letter-spacing: 1px;">Equipment & Inventory</h3>
+                <p id="display-gear" style="opacity: 0.8; line-height: 1.5; white-space: pre-wrap; margin: 0; font-size: 0.95rem;"></p>
+            </div>
+
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
+            authDomain: "bnm-adventurers-wanted.firebaseapp.com",
+            projectId: "bnm-adventurers-wanted",
+            storageBucket: "bnm-adventurers-wanted.firebasestorage.app",
+            messagingSenderId: "833066129939",
+            appId: "1:833066129939:web:016aed9208195881373de6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const characterId = localStorage.getItem('currentCharacterId');
+        
+        if (!characterId) {
+            alert("No character selection context active found.");
+            window.location.href = "index.html";
+        }
+
+        let localCharacterData = null;
+
+        window.exitSheet = () => {
+            localStorage.setItem('returningFromCharacter', 'true');
+            window.location.href = "index.html";
+        };
+
+        const getModifierString = (score) => {
+            const mod = Math.floor((score - 10) / 2);
+            return mod >= 0 ? `+${mod}` : `${mod}`;
+        };
+
+        // Real-time synchronization callback hook
+        onSnapshot(doc(db, "characters", characterId), (docSnap) => {
+            if (!docSnap.exists()) {
+                alert("Character has vanished from the timeline.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            const data = docSnap.data();
+            localCharacterData = data;
+
+            document.getElementById('display-name').innerText = data.name;
+            document.getElementById('display-class').innerText = data.class;
+            document.getElementById('display-hp').innerText = data.hp ?? 10;
+            document.getElementById('display-gold').innerText = data.gold ?? 0;
+            document.getElementById('display-gear').innerText = data.equipment || "No equipment listed.";
+
+            if (data.stats) {
+                for (const [stat, val] of Object.entries(data.stats)) {
+                    const el = document.getElementById(`val-${stat}`);
+                    const modEl = document.getElementById(`mod-${stat}`);
+                    if(el) el.innerText = val;
+                    if(modEl) modEl.innerText = `(${getModifierString(val)})`;
+                }
+            }
+        });
+
+        // Quick adjust utility updates Firestore database asynchronously
+        window.adjustVital = async (field, amount) => {
+            if (!localCharacterData || !characterId) return;
+            const currentVal = localCharacterData[field] ?? 0;
+            const targetVal = Math.max(0, currentVal + amount);
+            
+            try {
+                await updateDoc(doc(db, "characters", characterId), {
+                    [field]: targetVal
+                });
+            } catch(e) {
+                console.error("Failed to commit change: ", e);
+            }
+        };
+    </script>
+</body>
+</html>

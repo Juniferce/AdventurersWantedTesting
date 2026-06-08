@@ -115,12 +115,12 @@
                     
                     charItem.addEventListener('click', () => {
                         localStorage.setItem('currentCharacterId', doc.id);
-                        if (data.campaign === "The Signal From Space") {
-                            window.location.href = "character_signal.html";
-                        } else if (data.campaign === "Escape From Leviathan") {
-                            window.location.href = "character_leviathan.html";
+                        if (liveCamp.name === "The Treasure in Ervan's Keep") {
+                            setTimeout(() => { window.location.href = "create_ervan.html"; }, 420);
+                        } else if (liveCamp.name === "Escape From Leviathan") {
+                            setTimeout(() => { window.location.href = "create_leviathan.html"; }, 420);
                         } else {
-                            alert(`The character sheet for "${data.campaign}" is not ready yet.`);
+                            setTimeout(() => { window.location.href = "create_leviathan.html"; }, 420);
                         }
                     });
                     listContainer.appendChild(charItem);

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forge Your Adventurer - Ervan's Keep</title>
+    <link rel="stylesheet" href="base.css">
+    <style>
+        :root {
+            --accent-glow: #ff6b00; /* Ervan's Keep Amber */
+        }
+        
+        /* Ambient Dungeon/Keep background style */
+        .keep-bg {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top, #2a1405 0%, #080401 80%, #000000 100%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .stone-grid-overlay {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 107, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 107, 0, 0.03) 1px, transparent 1px),
+                repeating-radial-gradient(circle at 50% 30%, transparent 0, transparent 80px, rgba(255, 107, 0, 0.02) 81px, transparent 84px);
+            background-size: 60px 60px, 60px 60px, 100% 100%;
+            z-index: -1;
+            opacity: 0.9;
+            pointer-events: none;
+        }
+
+        .creation-flow {
+            width: 100%;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 24px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-box label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 6px;
+        }
+
+        .stat-box input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        select.sleek-input {
+            appearance: none;
+            cursor: pointer;
+        }
+        select.sleek-input option {
+            background: #0d0602;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="keep-bg"></div>
+    <div class="stone-grid-overlay"></div>
+
+    <div id="app-container">
+        <main class="creation-flow">
+            <div class="glass-card">
+                <h1 class="glow-text" style="font-size: 2rem; margin-bottom: 10px;">Forge an Adventurer</h1>
+                <p style="text-align: center; opacity: 0.6; margin-bottom: 30px; font-size: 0.9rem;">
+                    The Treasure in Ervan's Keep Campaign
+                </p>
+
+                <form id="character-form">
+                    <label class="form-label" for="char-name">Character Name</label>
+                    <input type="text" id="char-name" class="sleek-input" placeholder="e.g., Alistair the Bold" required>
+
+                    <label class="form-label" for="char-class">Heroic Calling (Class)</label>
+                    <select id="char-class" class="sleek-input" required>
+                        <option value="" disabled selected>Select a class...</option>
+                        <option value="Warrior">Warrior</option>
+                        <option value="Mage">Mage</option>
+                        <option value="Rogue">Rogue</option>
+                        <option value="Cleric">Cleric</option>
+                        <option value="Ranger">Ranger</option>
+                    </select>
+
+                    <h3 class="form-label" style="margin-top: 10px; margin-bottom: 15px;">Core Attributes</h3>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <label for="stat-str">STR</label>
+                            <input type="number" id="stat-str" min="1" max="20" value="10" required>
+                        </div>
+                        <div class="stat-box">
+                            <label for="stat-dex">DEX</label>
+                            <input type="number" id="stat-dex" min="1" max="20" value="10" required>
+                        </div>
+                        <div class="stat-box">
+                            <label for="stat-con">CON</label>
+                            <input type="number" id="stat-con" min="1" max="20" value="10" required>
+                        </div>
+                        <div class="stat-box">
+                            <label for="stat-int">INT</label>
+                            <input type="number" id="stat-int" min="1" max="20" value="10" required>
+                        </div>
+                        <div class="stat-box">
+                            <label for="stat-wis">WIS</label>
+                            <input type="number" id="stat-wis" min="1" max="20" value="10" required>
+                        </div>
+                        <div class="stat-box">
+                            <label for="stat-cha">CHA</label>
+                            <input type="number" id="stat-cha" min="1" max="20" value="10" required>
+                        </div>
+                    </div>
+
+                    <label class="form-label" for="char-gear">Starting Equipment / Backstory</label>
+                    <textarea id="char-gear" class="sleek-input" rows="3" style="resize: vertical; font-family: inherit;" placeholder="A rusted sword, leather parchment, and dark secrets..."></textarea>
+
+                    <button type="submit" id="submit-btn" class="primary-btn" style="margin-top: 10px;">
+                        Enter the Keep
+                    </button>
+                    
+                    <button type="button" class="secondary-btn" style="margin-top: 20px; width: 100%; text-align: center;" onclick="goBack()">
+                        Abandon Quest
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Firebase Config mirror
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
+            authDomain: "bnm-adventurers-wanted.firebaseapp.com",
+            projectId: "bnm-adventurers-wanted",
+            storageBucket: "bnm-adventurers-wanted.firebasestorage.app",
+            messagingSenderId: "833066129939",
+            appId: "1:833066129939:web:016aed9208195881373de6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Fetch user's persistent UUID
+        const deviceId = localStorage.getItem('device_uuid');
+
+        window.goBack = () => {
+            localStorage.setItem('returningFromCharacter', 'true');
+            window.location.href = "index.html";
+        };
+
+        document.getElementById('character-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Forging Character...";
+
+            const characterData = {
+                deviceId: deviceId,
+                campaign: "The Treasure in Ervan's Keep",
+                name: document.getElementById('char-name').value,
+                class: document.getElementById('char-class').value,
+                stats: {
+                    str: parseInt(document.getElementById('stat-str').value),
+                    dex: parseInt(document.getElementById('stat-dex').value),
+                    con: parseInt(document.getElementById('stat-con').value),
+                    int: parseInt(document.getElementById('stat-int').value),
+                    wis: parseInt(document.getElementById('stat-wis').value),
+                    cha: parseInt(document.getElementById('stat-cha').value)
+                },
+                equipment: document.getElementById('char-gear').value,
+                hp: 10 + Math.floor((parseInt(document.getElementById('stat-con').value) - 10) / 2), 
+                gold: 15
+            };
+
+            try {
+                const docRef = await addDoc(collection(db, "characters"), characterData);
+                localStorage.setItem('currentCharacterId', docRef.id);
+                window.location.href = "character_ervan.html";
+            } catch (error) {
+                console.error("Error creating document: ", error);
+                alert("Failed to forge adventurer. Try again.");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Enter the Keep";
+            }
+        });
+    </script>
+</body>
+</html>
