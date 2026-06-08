@@ -6,23 +6,24 @@
     <title>Character Sheet - Ervan's Keep</title>
     <link rel="stylesheet" href="base.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Patrick+Hand&display=swap');
+
         :root {
             --accent-glow: #ff6b00;
+            --sketch-font: 'Patrick Hand', 'Segoe UI', cursive;
         }
 
-        /* Wooden Table Environment */
         .table-bg {
             position: fixed;
             inset: 0;
             background: 
-                linear-gradient(90deg, rgba(0,0,0,0.3) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.3) 161px),
-                radial-gradient(circle at 50% 20%, #2d1604 0%, #120902 60%, #000000 100%);
+                linear-gradient(90deg, rgba(0,0,0,0.4) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.4) 161px),
+                radial-gradient(circle at 50% 20%, #221003 0%, #0e0501 70%, #000000 100%);
             background-size: 160px 100%, 100% 100%;
             z-index: -2;
             pointer-events: none;
         }
 
-        /* Color Flash Transition Layer */
         .color-flash {
             position: fixed;
             inset: 0;
@@ -33,45 +34,64 @@
             transition: opacity 0.4s ease;
         }
 
-        .sheet-container {
-            width: 100%;
-            max-width: 650px;
-            margin: 20px auto;
-            padding: 15px;
-            box-sizing: border-box;
+        /* ====================== THE SQUIGGLEVISION ENGINE ====================== */
+        @keyframes sketchWiggle {
+            0% { filter: url('#sheet-sketch-1'); }
+            25% { filter: url('#sheet-sketch-2'); }
+            50% { filter: url('#sheet-sketch-3'); }
+            75% { filter: url('#sheet-sketch-4'); }
+            100% { filter: url('#sheet-sketch-1'); }
         }
 
-        /* Paper on Table Aesthetic */
-        .paper-sheet {
-            background: #140d07;
-            border: 1px solid rgba(255, 107, 0, 0.3);
-            border-top: 4px solid var(--accent-glow);
-            border-radius: 4px;
+        .wiggle-ui {
+            animation: sketchWiggle 0.38s step-end infinite;
+        }
+
+        .sheet-container {
+            width: 100%;
+            max-width: 580px;
+            margin: 15px auto;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: var(--sketch-font);
+            color: #ffeedd;
+        }
+
+        .parchment-sheet {
+            background: #140b04;
+            border: 3px solid rgba(255, 107, 0, 0.5);
+            border-radius: 12px 255px 15px 195px/225px 15px 255px 12px;
             padding: 24px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
             margin-bottom: 20px;
         }
 
         .header-block {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 1px dashed rgba(255, 107, 0, 0.2);
-            padding-bottom: 16px;
-            margin-bottom: 20px;
+            align-items: center;
+            border-bottom: 2px dashed rgba(255, 107, 0, 0.2);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+
+        .char-title {
+            font-family: 'Architects Daughter', sans-serif;
+            color: var(--accent-glow);
+            margin: 0;
+            font-size: 1.9rem;
         }
 
         .vitality-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin-bottom: 20px;
         }
 
         .vital-box {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255, 107, 0, 0.15);
-            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+            border: 2px solid rgba(255, 107, 0, 0.25);
+            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
             padding: 12px;
             text-align: center;
         }
@@ -81,21 +101,22 @@
             align-items: center;
             justify-content: center;
             gap: 16px;
-            margin-top: 8px;
+            margin-top: 5px;
         }
 
         .sheet-arrow-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 107, 0, 0.05);
+            border: 2px solid rgba(255, 107, 0, 0.4);
             color: white;
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: inherit;
         }
         .sheet-arrow-btn:active {
             background: var(--accent-glow);
@@ -108,22 +129,45 @@
         }
 
         .attribute-card {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 107, 0, 0.1);
-            border-radius: 6px;
-            padding: 12px 6px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 107, 0, 0.2);
+            border-radius: 8px 4px 10px 4px/4px 10px 4px 8px;
+            padding: 10px 4px;
             text-align: center;
         }
 
         .attr-score-big {
-            font-size: 1.8rem;
+            font-family: 'Architects Daughter', sans-serif;
+            font-size: 2.1rem;
             font-weight: bold;
             color: var(--accent-glow);
-            margin: 4px 0;
+            margin: 2px 0;
         }
     </style>
 </head>
 <body>
+
+    <!-- Unique Displacement Matrix Vectors matching the creation page layout definitions -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <defs>
+            <filter id="sheet-sketch-1">
+                <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" result="noise" seed="10" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <filter id="sheet-sketch-2">
+                <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" result="noise" seed="20" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.0" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <filter id="sheet-sketch-3">
+                <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" result="noise" seed="30" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <filter id="sheet-sketch-4">
+                <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" result="noise" seed="40" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.4" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </defs>
+    </svg>
 
     <div id="color-flash" class="color-flash"></div>
     <div class="table-bg"></div>
@@ -131,63 +175,63 @@
     <div id="app-container">
         <main class="sheet-container">
             
-            <!-- Main Paper Sheet: Character Identification -->
-            <div class="paper-sheet">
+            <!-- Ledger Master Block -->
+            <div class="parchment-sheet wiggle-ui">
                 <div class="header-block">
                     <div>
-                        <h1 id="display-name" class="glow-text" style="text-align: left; margin: 0; font-size: 1.8rem;">Loading...</h1>
-                        <p id="display-class" style="margin: 4px 0 0 0; opacity: 0.5; font-size: 0.9rem; letter-spacing: 1px;"></p>
+                        <h1 id="display-name" class="char-title">Loading...</h1>
+                        <p id="display-class" style="margin: 4px 0 0 0; opacity: 0.6; font-size: 1rem; letter-spacing: 1px;"></p>
                     </div>
-                    <button class="secondary-btn" onclick="safeNavigate('index.html')">Exit Table</button>
+                    <button class="secondary-btn" style="font-family: inherit; font-size: 1.1rem;" onclick="safeNavigate('index.html')">Exit Table</button>
                 </div>
 
-                <!-- Vital Trackers -->
+                <!-- Live Vitals Tracker -->
                 <div class="vitality-grid">
                     <div class="vital-box">
-                        <span style="font-size: 0.75rem; opacity: 0.5; letter-spacing: 1px;">HEALTH POINTS</span>
+                        <span style="font-size: 0.9rem; opacity: 0.6; letter-spacing: 1px;">HEALTH POINTS</span>
                         <div class="vital-control-row">
                             <button class="sheet-arrow-btn" onclick="adjustVital('hp', -1)">-</button>
-                            <span id="display-hp" style="font-size: 1.6rem; font-weight: bold; min-width: 30px;">0</span>
+                            <span id="display-hp" style="font-size: 1.9rem; font-family: 'Architects Daughter'; font-weight: bold; min-width: 32px;">0</span>
                             <button class="sheet-arrow-btn" onclick="adjustVital('hp', 1)">+</button>
                         </div>
                     </div>
                     <div class="vital-box">
-                        <span style="font-size: 0.75rem; opacity: 0.5; letter-spacing: 1px;">GOLD PIECES</span>
+                        <span style="font-size: 0.9rem; opacity: 0.6; letter-spacing: 1px;">GOLD PIECES</span>
                         <div class="vital-control-row">
                             <button class="sheet-arrow-btn" onclick="adjustVital('gold', -1)">-</button>
-                            <span id="display-gold" style="font-size: 1.6rem; font-weight: bold; min-width: 30px;">0</span>
+                            <span id="display-gold" style="font-size: 1.9rem; font-family: 'Architects Daughter'; font-weight: bold; min-width: 32px;">0</span>
                             <button class="sheet-arrow-btn" onclick="adjustVital('gold', 1)">+</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Second Sheet Module: Core Attributes -->
-            <div class="paper-sheet">
-                <h3 style="margin-top: 0; margin-bottom: 16px; font-weight: 400; letter-spacing: 1px; opacity: 0.7;">Attributes</h3>
+            <!-- Core Attribute Panel -->
+            <div class="parchment-sheet wiggle-ui">
+                <h3 style="margin-top: 0; margin-bottom: 15px; font-weight: 400; letter-spacing: 1px; color: var(--accent-glow); font-size: 1.2rem;">Core Attributes</h3>
                 <div class="attribute-layout-grid">
                     <div class="attribute-card">
-                        <div style="font-size: 0.7rem; opacity: 0.5;">STR</div>
+                        <div style="font-size: 0.85rem; opacity: 0.6;">STR</div>
                         <div class="attr-score-big" id="val-str">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.7rem; opacity: 0.5;">DEX</div>
+                        <div style="font-size: 0.85rem; opacity: 0.6;">DEX</div>
                         <div class="attr-score-big" id="val-dex">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.7rem; opacity: 0.5;">CON</div>
+                        <div style="font-size: 0.85rem; opacity: 0.6;">CON</div>
                         <div class="attr-score-big" id="val-con">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.7rem; opacity: 0.5;">INT</div>
+                        <div style="font-size: 0.85rem; opacity: 0.6;">INT</div>
                         <div class="attr-score-big" id="val-int">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.7rem; opacity: 0.5;">WIS</div>
+                        <div style="font-size: 0.85rem; opacity: 0.6;">WIS</div>
                         <div class="attr-score-big" id="val-wis">-</div>
                     </div>
                     <div class="attribute-card">
-                        <div style="font-size: 0.7rem; opacity: 0.5;">CHA</div>
+                        <div style="font-size: 0.85rem; opacity: 0.6;">CHA</div>
                         <div class="attr-score-big" id="val-cha">-</div>
                     </div>
                 </div>
@@ -225,17 +269,14 @@
             localStorage.setItem('returningFromCharacter', 'true');
             const flash = document.getElementById('color-flash');
             flash.style.opacity = '1';
-            setTimeout(() => {
-                window.location.href = targetUrl;
-            }, 420);
+            setTimeout(() => { window.location.href = targetUrl; }, 420);
         };
 
         if (!characterId) {
-            alert("No character runtime context active.");
             window.location.href = "index.html";
         }
 
-        // Live Firestore Sync Hook
+        // Live Real-Time Document Synchronization
         onSnapshot(doc(db, "characters", characterId), (docSnap) => {
             if (!docSnap.exists()) {
                 window.location.href = "index.html";
@@ -267,7 +308,7 @@
                     [field]: targetVal
                 });
             } catch(e) {
-                console.error("Failed to commit adjustment: ", e);
+                console.error("Failed to sync vital adjustment: ", e);
             }
         };
     </script>

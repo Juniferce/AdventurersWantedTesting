@@ -6,8 +6,12 @@
     <title>Forge Your Adventurer - Ervan's Keep</title>
     <link rel="stylesheet" href="base.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Patrick+Hand&display=swap');
+
         :root {
             --accent-glow: #ff6b00;
+            --ink-dark: #1f0b00;
+            --sketch-font: 'Patrick Hand', 'Segoe UI', cursive;
         }
         
         /* Wooden Table Environment */
@@ -15,8 +19,8 @@
             position: fixed;
             inset: 0;
             background: 
-                linear-gradient(90deg, rgba(0,0,0,0.3) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.3) 161px),
-                radial-gradient(circle at 50% 20%, #2d1604 0%, #120902 60%, #000000 100%);
+                linear-gradient(90deg, rgba(0,0,0,0.4) 0px, transparent 1px, transparent 160px, rgba(0,0,0,0.4) 161px),
+                radial-gradient(circle at 50% 20%, #221003 0%, #0e0501 70%, #000000 100%);
             background-size: 160px 100%, 100% 100%;
             z-index: -2;
             pointer-events: none;
@@ -25,131 +29,211 @@
         .amber-torchlight {
             position: fixed;
             inset: 0;
-            background: radial-gradient(circle at 50% 40%, rgba(255, 107, 0, 0.08) 0%, transparent 70%);
+            background: radial-gradient(circle at 50% 40%, rgba(255, 107, 0, 0.06) 0%, transparent 80%);
             z-index: -1;
             pointer-events: none;
         }
 
-        /* Color Flash Transition Layer */
         .color-flash {
             position: fixed;
             inset: 0;
             z-index: 9999;
             background-color: #ff6b00;
-            opacity: 1; /* Starts solid, fades out on load */
+            opacity: 1;
             pointer-events: none;
             transition: opacity 0.4s ease;
         }
 
-        .creation-flow {
-            width: 100%;
-            max-width: 550px;
-            margin: 30px auto;
-            padding: 15px;
-            box-sizing: border-box;
+        /* ====================== THE SQUIGGLEVISION ENGINE ====================== */
+        @keyframes sketchWiggle {
+            0% { filter: url('#sketch-1'); }
+            25% { filter: url('#sketch-2'); }
+            50% { filter: url('#sketch-3'); }
+            75% { filter: url('#sketch-4'); }
+            100% { filter: url('#sketch-1'); }
         }
 
-        /* Paper on Table Aesthetic */
-        .paper-sheet {
-            background: #140d07;
-            border: 1px solid rgba(255, 107, 0, 0.4);
-            border-top: 4px solid var(--accent-glow);
-            border-radius: 4px;
-            padding: 32px 24px;
+        /* Applying the redrawn line charm to the paper, borders, and hand-written font styles */
+        .wiggle-ui {
+            animation: sketchWiggle 0.35s step-end infinite;
+        }
+
+        .creation-flow {
+            width: 100%;
+            max-width: 520px;
+            margin: 25px auto;
+            padding: 15px;
+            box-sizing: border-box;
+            font-family: var(--sketch-font);
+            color: #ffeedd;
+        }
+
+        /* Hand-cut Parchment Paper Styling */
+        .parchment-sheet {
+            background: #140b04;
+            /* Uneven borders trick combined with the SVG filter makes it look cut from an old scroll */
+            border: 3px solid rgba(255, 107, 0, 0.6);
+            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+            padding: 35px 25px;
             box-shadow: 
-                0 15px 35px rgba(0, 0, 0, 0.8),
-                0 0 20px rgba(255, 107, 0, 0.05);
+                0 15px 35px rgba(0, 0, 0, 0.9),
+                inset 0 0 40px rgba(255, 107, 0, 0.05);
             position: relative;
         }
 
-        .pool-counter {
-            background: rgba(255, 107, 0, 0.1);
-            border: 1px dashed var(--accent-glow);
-            border-radius: 8px;
-            padding: 12px;
+        .sketch-title {
+            font-family: 'Architects Daughter', sans-serif;
+            color: var(--accent-glow);
+            text-shadow: 0 0 10px rgba(255,107,0,0.2);
             text-align: center;
-            margin-bottom: 24px;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
+            margin: 0 0 5px 0;
+            font-size: 2.2rem;
         }
 
-        /* Mobile-First Custom Stat Row */
+        .pool-counter {
+            border: 2px dashed rgba(255, 107, 0, 0.5);
+            border-radius: 255px 15px 185px 15px/15px 185px 15px 255px;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.3rem;
+            background: rgba(255, 107, 0, 0.04);
+        }
+
         .stat-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 10px 16px;
-            margin-bottom: 12px;
+            border-bottom: 2px dashed rgba(255, 107, 0, 0.15);
+            padding: 8px 10px;
+            margin-bottom: 10px;
         }
 
         .stat-label {
-            font-weight: 600;
+            font-size: 1.3rem;
             letter-spacing: 1px;
-            font-size: 0.95rem;
-            width: 50px;
+            color: rgba(255,255,255,0.9);
         }
 
         .stat-controls {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
 
-        /* Large, clickable touch-targets for mobile phones */
+        /* Custom Touch-Target Hand-Drawn Buttons */
         .arrow-btn {
-            background: rgba(255, 107, 0, 0.15);
-            border: 1px solid rgba(255, 107, 0, 0.4);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
+            background: rgba(255, 107, 0, 0.1);
+            border: 2px solid rgba(255, 107, 0, 0.5);
+            border-radius: 50% 10px 50% 12px/12px 50% 12px 50%;
+            color: var(--accent-glow);
+            width: 42px;
+            height: 42px;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
             user-select: none;
-            transition: all 0.15s ease;
+            font-family: inherit;
+            transition: transform 0.1s ease;
         }
 
         .arrow-btn:active {
-            background: var(--accent-glow);
-            transform: scale(0.92);
+            transform: scale(0.9);
+            background: rgba(255, 107, 0, 0.3);
         }
 
         .arrow-btn:disabled {
-            opacity: 0.25;
+            opacity: 0.15;
             cursor: not-allowed;
-            background: rgba(255,255,255,0.05);
-            border-color: transparent;
+            border-color: rgba(255,255,255,0.1);
+            color: white;
         }
 
         .stat-display-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            min-width: 24px;
+            min-width: 28px;
             text-align: center;
+            font-family: 'Architects Daughter', sans-serif;
+            color: #ffffff;
+        }
+
+        .sketch-input-label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
             color: var(--accent-glow);
         }
 
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.7);
+        .handwritten-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 107, 0, 0.4);
+            border-radius: 4px 12px 4px 14px/12px 4px 14px 4px;
+            color: white;
+            padding: 10px 14px;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: var(--sketch-font);
         }
 
-        select.sleek-input option {
-            background: #140d07;
+        .handwritten-input:focus {
+            border-color: var(--accent-glow);
+            background: rgba(255, 107, 0, 0.05);
+        }
+
+        select.handwritten-input option {
+            background: #140b04;
             color: white;
+        }
+
+        /* Customizing primary button archetype to match style guidelines */
+        .primary-btn.sketch-btn {
+            background: transparent;
+            border: 2px solid var(--accent-glow);
+            border-radius: 10px 100px 12px 90px/90px 12px 100px 10px;
+            font-family: var(--sketch-font);
+            color: white;
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 12px;
+            margin-top: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        .primary-btn.sketch-btn:hover:not(:disabled) {
+            background: rgba(255, 107, 0, 0.15);
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
+
+    <!-- Dynamic SVG Turbulence Matrix used to manipulate vectors for the line wiggle -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <defs>
+            <filter id="sketch-1">
+                <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" seed="1" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <filter id="sketch-2">
+                <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" seed="2" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <filter id="sketch-3">
+                <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" seed="3" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <filter id="sketch-4">
+                <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" seed="4" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.4" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </defs>
+    </svg>
 
     <div id="color-flash" class="color-flash"></div>
     <div class="table-bg"></div>
@@ -157,36 +241,35 @@
 
     <div id="app-container">
         <main class="creation-flow">
-            <div class="paper-sheet">
-                <h1 class="glow-text" style="font-size: 2rem; margin-bottom: 5px;">Forge an Adventurer</h1>
-                <p style="text-align: center; opacity: 0.5; margin-bottom: 25px; font-size: 0.85rem; letter-spacing: 1px;">
-                    The Treasure in Ervan's Keep
+            <div class="parchment-sheet wiggle-ui">
+                <h1 class="sketch-title">Forge an Adventurer</h1>
+                <p style="text-align: center; opacity: 0.5; margin-bottom: 20px; font-size: 0.95rem; letter-spacing: 1px;">
+                    THE TREASURE IN ERVAN'S KEEP
                 </p>
 
                 <div class="pool-counter">
-                    Attribute Points Remaining: <strong id="pool-display" style="color: var(--accent-glow);">6</strong>
+                    Points Remaining: <strong id="pool-display" style="color: var(--accent-glow); font-family: 'Architects Daughter';">6</strong>
                 </div>
 
                 <form id="character-form">
-                    <label class="form-label" for="char-name">Character Name</label>
-                    <input type="text" id="char-name" class="sleek-input" placeholder="e.g., Sir Roderick" required>
+                    <label class="sketch-input-label" for="char-name">Character Name</label>
+                    <input type="text" id="char-name" class="handwritten-input" placeholder="Inscribe name..." required>
 
-                    <label class="form-label" for="char-class">Heroic Class</label>
-                    <select id="char-class" class="sleek-input" required>
-                        <option value="" disabled selected>Choose a path...</option>
+                    <label class="sketch-input-label" for="char-class">Heroic Calling</label>
+                    <select id="char-class" class="handwritten-input" required>
+                        <option value="" disabled selected>Select a class...</option>
                         <option value="Warrior">Warrior</option>
                         <option value="Mage">Mage</option>
                         <option value="Rogue">Rogue</option>
                         <option value="Cleric">Cleric</option>
                     </select>
 
-                    <h3 class="form-label" style="margin-top: 20px; margin-bottom: 12px;">Attributes (Range 1-6)</h3>
+                    <h3 class="sketch-input-label" style="margin-top: 20px; font-size: 1.2rem;">Core Attributes (Min 1 / Max 6)</h3>
                     
-                    <!-- Dynamic Attribute Rows -->
-                    <div id="attributes-wrapper">
+                    <div id="attributes-container">
                         <!-- STR -->
                         <div class="stat-row">
-                            <span class="stat-label">STR</span>
+                            <span class="stat-label">STRENGTH</span>
                             <div class="stat-controls">
                                 <button type="button" class="arrow-btn" onclick="adjustStat('str', -1)">◀</button>
                                 <span class="stat-display-value" id="val-str">2</span>
@@ -195,16 +278,16 @@
                         </div>
                         <!-- DEX -->
                         <div class="stat-row">
-                            <span class="stat-label">DEX</span>
+                            <span class="stat-label">DEXTERITY</span>
                             <div class="stat-controls">
-                                <button type="button" class="arrow-btn" onclick="adjustStat('grid-dex', -1)">◀</button>
+                                <button type="button" class="arrow-btn" onclick="adjustStat('dex', -1)">◀</button>
                                 <span class="stat-display-value" id="val-dex">2</span>
                                 <button type="button" class="arrow-btn" onclick="adjustStat('dex', 1)">▶</button>
                             </div>
                         </div>
                         <!-- CON -->
                         <div class="stat-row">
-                            <span class="stat-label">CON</span>
+                            <span class="stat-label">CONSTITUTION</span>
                             <div class="stat-controls">
                                 <button type="button" class="arrow-btn" onclick="adjustStat('con', -1)">◀</button>
                                 <span class="stat-display-value" id="val-con">2</span>
@@ -213,7 +296,7 @@
                         </div>
                         <!-- INT -->
                         <div class="stat-row">
-                            <span class="stat-label">INT</span>
+                            <span class="stat-label">INTELLIGENCE</span>
                             <div class="stat-controls">
                                 <button type="button" class="arrow-btn" onclick="adjustStat('int', -1)">◀</button>
                                 <span class="stat-display-value" id="val-int">2</span>
@@ -222,7 +305,7 @@
                         </div>
                         <!-- WIS -->
                         <div class="stat-row">
-                            <span class="stat-label">WIS</span>
+                            <span class="stat-label">WISDOM</span>
                             <div class="stat-controls">
                                 <button type="button" class="arrow-btn" onclick="adjustStat('wis', -1)">◀</button>
                                 <span class="stat-display-value" id="val-wis">2</span>
@@ -231,7 +314,7 @@
                         </div>
                         <!-- CHA -->
                         <div class="stat-row">
-                            <span class="stat-label">CHA</span>
+                            <span class="stat-label">CHARISMA</span>
                             <div class="stat-controls">
                                 <button type="button" class="arrow-btn" onclick="adjustStat('cha', -1)">◀</button>
                                 <span class="stat-display-value" id="val-cha">2</span>
@@ -240,11 +323,11 @@
                         </div>
                     </div>
 
-                    <button type="submit" id="submit-btn" class="primary-btn" style="margin-top: 20px;">
-                        Enter the Keep
+                    <button type="submit" id="submit-btn" class="primary-btn sketch-btn" style="width: 100%;">
+                        Sign the Scroll
                     </button>
                     
-                    <button type="button" class="secondary-btn" style="margin-top: 20px; width: 100%; text-align: center;" onclick="safeNavigate('index.html')">
+                    <button type="button" class="secondary-btn" style="margin-top: 20px; width: 100%; text-align: center; font-family: inherit; font-size: 1.1rem;" onclick="safeNavigate('index.html')">
                         Abandon Quest
                     </button>
                 </form>
@@ -269,11 +352,10 @@
         const db = getFirestore(app);
         const deviceId = localStorage.getItem('device_uuid');
 
-        // Engine State
+        // Dynamic State (Starts at 2 per stat, pool of 6 points)
         let pointsPool = 6;
         const currentStats = { str: 2, dex: 2, con: 2, int: 2, wis: 2, cha: 2 };
 
-        // Handle page entrance fade-out
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('color-flash').style.opacity = '0';
@@ -281,16 +363,13 @@
             updateControlDOM();
         });
 
-        // Unified Flash Fade Navigation Engine
         window.safeNavigate = (targetUrl) => {
             if (targetUrl === 'index.html') {
                 localStorage.setItem('returningFromCharacter', 'true');
             }
             const flash = document.getElementById('color-flash');
             flash.style.opacity = '1';
-            setTimeout(() => {
-                window.location.href = targetUrl;
-            }, 420);
+            setTimeout(() => { window.location.href = targetUrl; }, 420);
         };
 
         window.adjustStat = (stat, direction) => {
@@ -313,9 +392,7 @@
                 if (row) {
                     row.innerText = value;
                     const btns = row.parentElement.querySelectorAll('.arrow-btn');
-                    // Minus Button constraints
                     btns[0].disabled = (value <= 1);
-                    // Plus Button constraints
                     btns[1].disabled = (value >= 6 || pointsPool <= 0);
                 }
             }
@@ -325,13 +402,13 @@
             e.preventDefault();
             
             if (pointsPool > 0) {
-                alert(`You still have ${pointsPool} points left to distribute!`);
+                alert(`You must spend your remaining ${pointsPool} attribute points!`);
                 return;
             }
 
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;
-            submitBtn.innerText = "Forging Character...";
+            submitBtn.innerText = "Writing Journal...";
 
             const characterData = {
                 deviceId: deviceId,
@@ -339,8 +416,8 @@
                 name: document.getElementById('char-name').value,
                 class: document.getElementById('char-class').value,
                 stats: currentStats,
-                hp: 12 + currentStats.con, 
-                gold: 20
+                hp: 10 + currentStats.con, 
+                gold: 15
             };
 
             try {
@@ -350,7 +427,7 @@
             } catch (error) {
                 console.error("Error creating document: ", error);
                 submitBtn.disabled = false;
-                submitBtn.innerText = "Enter the Keep";
+                submitBtn.innerText = "Sign the Scroll";
             }
         });
     </script>
