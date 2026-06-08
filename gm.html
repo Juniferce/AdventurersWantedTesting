@@ -3,92 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GM Terminal - Nexus</title>
-    <link rel="stylesheet" href="base.css">
-    <link rel="stylesheet" href="gm.css">
+    <title>GM Dashboard - Ervan's Keep</title>
     <style>
-        input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            padding: 0;
-            background: none;
-            box-shadow: 0 0 10px rgba(255,255,255,0.1);
-            flex-shrink: 0;
+        @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Patrick+Hand&display=swap');
+
+        :root {
+            --accent-ink: #8a3300;
+            --dark-text: #210a00;
+            --parchment-bright: #ffb57d;
+            --parchment-dim: #e69c65;
+            --bg-color: #1a0800;
+            --sketch-font: 'Patrick Hand', 'Segoe UI', cursive;
         }
-        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; }
-        .gm-char-card { user-select: none; -webkit-user-select: none; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--parchment-bright);
+            font-family: var(--sketch-font);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            font-family: 'Architects Daughter', sans-serif;
+            text-align: center;
+            color: var(--parchment-bright);
+            border-bottom: 2px dashed rgba(255, 181, 125, 0.3);
+            padding-bottom: 10px;
+        }
+
+        /* Character Grid */
+        .roster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .char-card {
+            background: var(--parchment-bright);
+            color: var(--dark-text);
+            border: 3px solid var(--accent-ink);
+            border-radius: 8px 12px 8px 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+        }
+
+        .char-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.7);
+        }
+
+        .char-card h2 {
+            margin: 0 0 5px 0;
+            font-family: 'Architects Daughter', sans-serif;
+            font-size: 1.8rem;
+        }
+
+        .char-card p {
+            margin: 4px 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .meta-tag {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            word-break: break-all;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: var(--parchment-bright);
+            color: var(--dark-text);
+            max-width: 600px;
+            margin: 20px auto;
+            border: 4px solid var(--accent-ink);
+            border-radius: 12px;
+            padding: 25px;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            font-size: 2rem;
+            color: var(--accent-ink);
+            cursor: pointer;
+            font-family: 'Architects Daughter', sans-serif;
+        }
+
+        .modal-content h2 {
+            font-family: 'Architects Daughter', sans-serif;
+            font-size: 2.2rem;
+            margin-top: 0;
+            border-bottom: 2px solid var(--accent-ink);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid var(--accent-ink);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: var(--sketch-font);
+            font-size: 1.1rem;
+            color: var(--dark-text);
+            box-sizing: border-box;
+            font-weight: bold;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .abilities-list {
+            background: rgba(138, 51, 0, 0.05);
+            border: 2px dashed rgba(138, 51, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .ability-item {
+            background: var(--parchment-dim);
+            border: 1px solid var(--accent-ink);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .ability-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .ability-grid {
+            display: grid;
+            grid-template-columns: 1fr 100px;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background: var(--accent-ink);
+            color: var(--parchment-bright);
+            border: 2px solid var(--dark-text);
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-family: var(--sketch-font);
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-add {
+            background: #2b5c2b;
+            margin-bottom: 15px;
+        }
+
+        .btn-danger {
+            background: #8a1a1a;
+            padding: 4px 8px;
+            font-size: 1rem;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .btn-save {
+            width: 100%;
+            font-size: 1.5rem;
+            padding: 12px;
+            background: var(--dark-text);
+        }
     </style>
 </head>
 <body>
 
-    <div id="app-container">
-        <div class="admin-header">
-            <h1 class="glow-text" style="margin-bottom: 20px;">GM Terminal</h1>
-            
-            <div class="main-tabs">
-                <button class="tab-btn active" id="tab-btn-groups" onclick="switchTab('groups')">Player Groups</button>
-                <button class="tab-btn" id="tab-btn-campaigns" onclick="switchTab('campaigns')">Campaigns</button>
-            </div>
-
-            <div style="margin-top: 15px;">
-                <button class="create-group-btn" id="manual-group-btn">+ Create Manual Group</button>
-                <button class="create-group-btn hidden" id="add-campaign-btn">+ Add Blank Campaign</button>
-            </div>
-        </div>
-
-        <div id="tab-groups" class="tab-content">
-            <div id="groups-container" class="groups-container">
-                <div style="text-align: center; opacity: 0.5;">Loading Universe...</div>
-            </div>
-        </div>
-
-        <div id="tab-campaigns" class="tab-content hidden">
-            <div id="campaigns-container" class="campaigns-grid">
-                <div style="text-align: center; opacity: 0.5; grid-column: 1 / -1;">Loading Campaigns...</div>
-            </div>
-        </div>
+    <h1>GM Dashboard - Character Roster</h1>
+    <div id="roster-grid" class="roster-grid">
+        <p style="text-align: center; width: 100%; opacity: 0.5;">Loading characters...</p>
     </div>
 
-    <div id="char-edit-modal" class="modal-overlay modal-closed">
-        <div class="glass-card modal-content">
-            <h2 class="glow-text" style="margin-bottom: 20px; font-size: 1.8rem;">Edit Adventurer</h2>
-            <label style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 5px; display: block;">Character Name</label>
-            <input type="text" id="edit-char-name" class="sleek-input">
-            <label style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 5px; display: block;">Class / Role</label>
-            <input type="text" id="edit-char-class" class="sleek-input">
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <button id="save-char-btn" class="primary-btn" style="flex: 1;">Save Changes</button>
-                <button id="delete-char-btn" class="trash-btn" style="padding: 0 20px; font-size: 1.2rem;" title="Delete Character">🗑️</button>
-            </div>
-            <button class="secondary-btn" onclick="closeCharEditModal()" style="margin-top: 15px;">Cancel</button>
-        </div>
-    </div>
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">×</button>
+            <h2 id="modal-char-name">Edit Character</h2>
 
-    <div id="camp-classes-modal" class="modal-overlay modal-closed">
-        <div class="glass-card modal-content">
-            <h2 class="glow-text" style="margin-bottom: 10px; font-size: 1.6rem;" id="classes-camp-title">Edit Classes</h2>
-            <p style="text-align: center; opacity: 0.6; margin-top: 0; margin-bottom: 20px;">These are the options players can choose from during character creation.</p>
+            <div class="form-group">
+                <label for="edit-device-id">Device ID (Owner)</label>
+                <input type="text" id="edit-device-id" placeholder="Paste player's device UUID here">
+                <small style="opacity: 0.8;">Change this to transfer character ownership to a different device.</small>
+            </div>
+
+            <h3 style="border-bottom: 2px solid var(--accent-ink); padding-bottom: 5px; margin-top: 30px;">Abilities</h3>
             
-            <div id="classes-list-container" class="character-list" style="margin-bottom: 20px; max-height: 250px;">
-                </div>
-
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <input type="text" id="new-class-input" class="sleek-input" style="margin: 0;" placeholder="New Class Name...">
-                <button id="add-class-btn" class="primary-btn" style="width: auto; padding: 12px 20px;">Add</button>
+            <button type="button" class="btn btn-add" onclick="addNewAbility()">+ Add New Ability</button>
+            
+            <div id="abilities-container" class="abilities-list">
+                <!-- Ability rows injected here -->
             </div>
 
-            <button class="secondary-btn" onclick="closeCampClassesModal()">Done</button>
+            <button type="button" class="btn btn-save" onclick="saveCharacter()">Save Changes</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwOlKvIXMzamhfw-eNZFF_ofhdKSOAv_Q",
@@ -102,431 +260,177 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let liveCampaigns = [];
-        let liveGroups = [];
-        let liveCharacters = [];
+        let activeCharacters = {};
+        let currentEditingId = null;
 
-        // --- TAB LOGIC ---
-        window.switchTab = (tabName) => {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
-
-            if (tabName === 'groups') {
-                document.getElementById('manual-group-btn').classList.remove('hidden');
-                document.getElementById('add-campaign-btn').classList.add('hidden');
-            } else {
-                document.getElementById('manual-group-btn').classList.add('hidden');
-                document.getElementById('add-campaign-btn').classList.remove('hidden');
-            }
-        };
-
-        // --- FETCH DATA ---
-        onSnapshot(collection(db, "campaigns"), (snap) => {
-            liveCampaigns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderGroups();
-            renderCampaigns();
-        });
-        onSnapshot(collection(db, "groups"), (snap) => {
-            liveGroups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderGroups();
-        });
-        onSnapshot(collection(db, "characters"), async (snap) => {
-            liveCharacters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            await reconcileAutoGroups();
-            renderGroups();
-        });
-
-        // ==========================================
-        //         CAMPAIGN CLASSES LOGIC
-        // ==========================================
-        let editingCampIdForClasses = null;
-
-        window.openCampClassesModal = (campId) => {
-            editingCampIdForClasses = campId;
-            document.getElementById('camp-classes-modal').classList.remove('modal-closed');
-            renderClassesList();
-        };
-
-        window.closeCampClassesModal = () => {
-            document.getElementById('camp-classes-modal').classList.add('modal-closed');
-            editingCampIdForClasses = null;
-        };
-
-        function renderClassesList() {
-            if (!editingCampIdForClasses) return;
-            const camp = liveCampaigns.find(c => c.id === editingCampIdForClasses);
-            if (!camp) return;
-
-            document.getElementById('classes-camp-title').innerText = `Classes: ${camp.name}`;
-            const listContainer = document.getElementById('classes-list-container');
-            listContainer.innerHTML = "";
-
-            const classes = camp.classes || [];
-
-            if (classes.length === 0) {
-                listContainer.innerHTML = `<div style="text-align:center; opacity:0.5; padding: 20px;">No classes added yet.</div>`;
-            } else {
-                classes.forEach((cls, index) => {
-                    const item = document.createElement('div');
-                    item.className = "class-item";
-                    item.innerHTML = `
-                        <strong style="font-size: 1.1rem;">${cls}</strong>
-                        <button class="icon-btn" style="color: #ff4d4d; opacity: 0.8;" title="Remove Class">✖</button>
-                    `;
-                    // Delete class logic
-                    item.querySelector('button').onclick = async () => {
-                        const newClasses = [...classes];
-                        newClasses.splice(index, 1);
-                        await updateDoc(doc(db, "campaigns", camp.id), { classes: newClasses });
-                        // We call render manually here because the snapshot might take a split second
-                        renderClassesList(); 
-                    };
-                    listContainer.appendChild(item);
-                });
-            }
-        }
-
-        document.getElementById('add-class-btn').onclick = async () => {
-            if (!editingCampIdForClasses) return;
-            const input = document.getElementById('new-class-input');
-            const newClass = input.value.trim();
-            if (!newClass) return;
-
-            const camp = liveCampaigns.find(c => c.id === editingCampIdForClasses);
-            const currentClasses = camp.classes || [];
+        // Listen for all characters in real-time
+        onSnapshot(collection(db, "characters"), (snapshot) => {
+            const grid = document.getElementById('roster-grid');
+            grid.innerHTML = '';
             
-            if (!currentClasses.includes(newClass)) {
-                const updatedClasses = [...currentClasses, newClass];
-                await updateDoc(doc(db, "campaigns", camp.id), { classes: updatedClasses });
-                input.value = "";
-                renderClassesList();
-            } else {
-                alert("This class already exists!");
-            }
-        };
-
-        // Add class on pressing Enter
-        document.getElementById('new-class-input').onkeydown = (e) => {
-            if (e.key === 'Enter') document.getElementById('add-class-btn').click();
-        };
-
-
-        // ==========================================
-        //         CAMPAIGNS TAB LOGIC
-        // ==========================================
-        document.getElementById('add-campaign-btn').onclick = async () => {
-            await addDoc(collection(db, "campaigns"), {
-                name: "New Adventure",
-                color: "#ffffff",
-                enabled: false,
-                image: "https://via.placeholder.com/320x480?text=Poster",
-                order: liveCampaigns.length,
-                classes: [] // Set up the empty array by default
-            });
-        };
-
-        function renderCampaigns() {
-            const container = document.getElementById('campaigns-container');
-            container.innerHTML = "";
-
-            const sortedCamps = [...liveCampaigns].sort((a,b) => (a.order || 0) - (b.order || 0));
-
-            sortedCamps.forEach(camp => {
-                const card = document.createElement('div');
-                card.className = "campaign-card";
-                card.style.setProperty('--camp-color', camp.color || '#fff');
-
-                // Poster Top Half (Clickable for Classes)
-                const posterContainer = document.createElement('div');
-                posterContainer.className = "camp-poster-container";
-                posterContainer.onclick = () => openCampClassesModal(camp.id);
-                posterContainer.innerHTML = `
-                    <img src="${camp.image}" alt="Poster">
-                    <div class="camp-poster-overlay">Edit Classes</div>
-                `;
-
-                // Info Bottom Half
-                const infoBox = document.createElement('div');
-                infoBox.className = "camp-info-box";
-
-                // Title Row
-                const titleRow = document.createElement('div');
-                titleRow.className = "camp-header-row";
-
-                const colorPicker = document.createElement('input');
-                colorPicker.type = "color";
-                colorPicker.value = camp.color || "#ffffff";
-                colorPicker.title = "Change Theme Color";
-                colorPicker.onchange = async (e) => await updateDoc(doc(db, "campaigns", camp.id), { color: e.target.value });
-
-                const titleText = document.createElement('div');
-                titleText.className = "camp-title";
-                titleText.innerText = camp.name;
-
-                const editBtn = document.createElement('button');
-                editBtn.className = "icon-btn";
-                editBtn.innerHTML = "✎";
-                editBtn.onclick = () => {
-                    const input = document.createElement('input');
-                    input.className = "group-name-input"; 
-                    input.style.width = "100%";
-                    input.value = camp.name;
-                    
-                    const saveName = async () => {
-                        if (input.value.trim() !== "" && input.value !== camp.name) {
-                            await updateDoc(doc(db, "campaigns", camp.id), { name: input.value.trim() });
-                        } else renderCampaigns(); 
-                    };
-
-                    input.onblur = saveName;
-                    input.onkeydown = (e) => { if (e.key === 'Enter') saveName(); };
-
-                    titleRow.replaceChild(input, titleText);
-                    input.focus();
-                };
-
-                titleRow.appendChild(colorPicker);
-                titleRow.appendChild(titleText);
-                titleRow.appendChild(editBtn);
-
-                // Controls Row (Toggle & Trash)
-                const controlsRow = document.createElement('div');
-                controlsRow.className = "camp-controls-row";
-
-                const toggleLabel = document.createElement('label');
-                toggleLabel.className = "switch";
-                const toggleInput = document.createElement('input');
-                toggleInput.type = "checkbox";
-                toggleInput.checked = camp.enabled !== false;
-                toggleInput.onchange = async (e) => await updateDoc(doc(db, "campaigns", camp.id), { enabled: e.target.checked });
-                const slider = document.createElement('span');
-                slider.className = "slider";
-                toggleLabel.appendChild(toggleInput);
-                toggleLabel.appendChild(slider);
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = "trash-btn";
-                deleteBtn.innerHTML = "🗑️";
-                deleteBtn.onclick = async () => {
-                    if (!deleteBtn.classList.contains('armed')) {
-                        deleteBtn.classList.add('armed');
-                        deleteBtn.innerHTML = "Confirm?";
-                        setTimeout(() => {
-                            if (deleteBtn) {
-                                deleteBtn.classList.remove('armed');
-                                deleteBtn.innerHTML = "🗑️";
-                            }
-                        }, 3000); 
-                    } else {
-                        await deleteDoc(doc(db, "campaigns", camp.id));
-                    }
-                };
-
-                controlsRow.appendChild(toggleLabel);
-                controlsRow.appendChild(deleteBtn);
-
-                infoBox.appendChild(titleRow);
-                infoBox.appendChild(controlsRow);
-
-                card.appendChild(posterContainer);
-                card.appendChild(infoBox);
-
-                container.appendChild(card);
-            });
-        }
-
-        // ==========================================
-        //         CHARACTER EDIT LOGIC
-        // ==========================================
-        let editingCharId = null;
-
-        window.closeCharEditModal = () => {
-            document.getElementById('char-edit-modal').classList.add('modal-closed');
-            editingCharId = null;
-        };
-
-        window.openCharEditModal = (charId) => {
-            const char = liveCharacters.find(c => c.id === charId);
-            if (!char) return;
-            editingCharId = charId;
-            document.getElementById('edit-char-name').value = char.name || "";
-            document.getElementById('edit-char-class').value = char.class || "";
-
-            const delBtn = document.getElementById('delete-char-btn');
-            delBtn.classList.remove('armed');
-            delBtn.innerHTML = "🗑️";
-
-            document.getElementById('char-edit-modal').classList.remove('modal-closed');
-        };
-
-        document.getElementById('save-char-btn').onclick = async () => {
-            if (!editingCharId) return;
-            const newName = document.getElementById('edit-char-name').value.trim();
-            const newClass = document.getElementById('edit-char-class').value.trim();
-            if (newName) {
-                await updateDoc(doc(db, "characters", editingCharId), { name: newName, class: newClass });
-                window.closeCharEditModal();
-            }
-        };
-
-        document.getElementById('delete-char-btn').onclick = async (e) => {
-            if (!editingCharId) return;
-            const btn = e.target;
-            if (!btn.classList.contains('armed')) {
-                btn.classList.add('armed');
-                btn.innerHTML = "Confirm?";
-                setTimeout(() => {
-                    if (btn) {
-                        btn.classList.remove('armed');
-                        btn.innerHTML = "🗑️";
-                    }
-                }, 3000);
-            } else {
-                await deleteDoc(doc(db, "characters", editingCharId));
-                window.closeCharEditModal();
-            }
-        };
-
-        // ==========================================
-        //         GROUPS TAB LOGIC
-        // ==========================================
-        async function reconcileAutoGroups() {
-            const twoHoursMs = 2 * 60 * 60 * 1000;
-            for (let char of liveCharacters) {
-                if (!char.groupId) {
-                    let charTime = char.createdAt ? (char.createdAt.toMillis ? char.createdAt.toMillis() : char.createdAt) : Date.now();
-                    let matchedGroup = liveGroups.find(g => {
-                        let gTime = g.createdAt ? (g.createdAt.toMillis ? g.createdAt.toMillis() : g.createdAt) : 0;
-                        return Math.abs(charTime - gTime) <= twoHoursMs && g.campaign === char.campaign;
-                    });
-
-                    if (matchedGroup) {
-                        await updateDoc(doc(db, "characters", char.id), { groupId: matchedGroup.id });
-                    } else {
-                        const campData = liveCampaigns.find(c => c.name === char.campaign);
-                        const groupColor = campData ? campData.color : "#ffffff";
-                        const newGroupRef = await addDoc(collection(db, "groups"), {
-                            name: `Group ${liveGroups.length + 1}`,
-                            createdAt: char.createdAt || Timestamp.now(),
-                            campaign: char.campaign,
-                            color: groupColor
-                        });
-                        liveGroups.push({ id: newGroupRef.id, name: `Group ${liveGroups.length + 1}`, createdAt: charTime, campaign: char.campaign, color: groupColor });
-                        await updateDoc(doc(db, "characters", char.id), { groupId: newGroupRef.id });
-                    }
-                }
-            }
-        }
-
-        document.getElementById('manual-group-btn').onclick = async () => {
-            await addDoc(collection(db, "groups"), {
-                name: `Group ${liveGroups.length + 1}`,
-                createdAt: Timestamp.now(),
-                campaign: "Custom",
-                color: "#ffffff"
-            });
-        };
-
-        function renderGroups() {
-            const container = document.getElementById('groups-container');
-            container.innerHTML = "";
-            if (liveGroups.length === 0) {
-                container.innerHTML = `<div style="text-align: center; opacity: 0.5;">No groups formed yet.</div>`;
+            if (snapshot.empty) {
+                grid.innerHTML = '<p style="text-align: center; width: 100%;">No characters found in the database.</p>';
                 return;
             }
 
-            const sortedGroups = [...liveGroups].sort((a,b) => {
-                let timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : a.createdAt;
-                let timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : b.createdAt;
-                return timeA - timeB;
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                activeCharacters[docSnap.id] = data;
+
+                const card = document.createElement('div');
+                card.className = 'char-card';
+                card.onclick = () => openModal(docSnap.id);
+
+                card.innerHTML = `
+                    <h2>${data.name || 'Unnamed'}</h2>
+                    <p>${data.class || 'No Class'} | Lvl 1</p>
+                    <p>HP: ${data.hp} | Gold: ${data.gold}</p>
+                    <p class="meta-tag">Device: ${data.deviceId ? data.deviceId.substring(0, 8) + '...' : 'Unassigned'}</p>
+                    <p class="meta-tag">Abilities: ${data.abilities ? data.abilities.length : 0}</p>
+                `;
+                grid.appendChild(card);
             });
+        });
 
-            sortedGroups.forEach(group => {
-                const groupEl = document.createElement('div');
-                groupEl.className = "player-group";
-                groupEl.dataset.groupId = group.id;
-                
-                const campData = liveCampaigns.find(c => c.name === group.campaign);
-                const syncColor = campData ? campData.color : group.color;
-                groupEl.style.setProperty('--group-color', syncColor);
+        window.openModal = (id) => {
+            currentEditingId = id;
+            const char = activeCharacters[id];
+            
+            document.getElementById('modal-char-name').innerText = `Edit: ${char.name}`;
+            document.getElementById('edit-device-id').value = char.deviceId || '';
+            
+            renderAbilities(char.abilities || []);
+            
+            document.getElementById('edit-modal').style.display = 'block';
+        };
 
-                groupEl.addEventListener('dragover', (e) => { e.preventDefault(); groupEl.classList.add('drag-over'); });
-                groupEl.addEventListener('dragleave', () => groupEl.classList.remove('drag-over'));
-                groupEl.addEventListener('drop', async (e) => {
-                    e.preventDefault();
-                    groupEl.classList.remove('drag-over');
-                    const charId = e.dataTransfer.getData('text/plain');
-                    if (charId) await updateDoc(doc(db, "characters", charId), { groupId: group.id });
-                });
+        window.closeModal = () => {
+            document.getElementById('edit-modal').style.display = 'none';
+            currentEditingId = null;
+        };
 
-                const header = document.createElement('div');
-                header.className = "group-header";
-                
-                const titleBlock = document.createElement('div');
-                titleBlock.style.display = "flex"; titleBlock.style.alignItems = "center"; titleBlock.style.gap = "10px"; titleBlock.style.flexGrow = "1";
+        function renderAbilities(abilitiesArray) {
+            const container = document.getElementById('abilities-container');
+            container.innerHTML = '';
 
-                const titleText = document.createElement('h2');
-                titleText.className = "group-title"; titleText.innerText = group.name;
+            if (abilitiesArray.length === 0) {
+                container.innerHTML = '<p style="text-align:center; opacity:0.6; margin:0;">No abilities assigned.</p>';
+                return;
+            }
 
-                const editBtn = document.createElement('button');
-                editBtn.className = "icon-btn"; editBtn.innerHTML = "✎"; 
-                editBtn.onclick = () => {
-                    const input = document.createElement('input');
-                    input.className = "group-name-input"; input.value = group.name;
-                    const saveName = async () => {
-                        if (input.value.trim() !== "" && input.value !== group.name) await updateDoc(doc(db, "groups", group.id), { name: input.value.trim() });
-                        else renderGroups();
+            abilitiesArray.forEach((ability, index) => {
+                const div = document.createElement('div');
+                div.className = 'ability-item';
+                div.innerHTML = `
+                    <div class="ability-grid">
+                        <div>
+                            <label>Title</label>
+                            <input type="text" class="ab-title" value="${escapeHtml(ability.title || '')}" placeholder="Ability Name">
+                        </div>
+                        <div>
+                            <label>Uses</label>
+                            <input type="number" class="ab-uses" value="${ability.uses !== undefined && ability.uses !== null ? ability.uses : ''}" placeholder="∞">
+                        </div>
+                    </div>
+                    <div>
+                        <label>Description</label>
+                        <textarea class="ab-desc" placeholder="What does this do?">${escapeHtml(ability.description || '')}</textarea>
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="removeAbility(this)">Delete Ability</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.addNewAbility = () => {
+            const container = document.getElementById('abilities-container');
+            
+            // Remove the empty message if it exists
+            if (container.querySelector('p')) {
+                container.innerHTML = '';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'ability-item';
+            div.innerHTML = `
+                <div class="ability-grid">
+                    <div>
+                        <label>Title</label>
+                        <input type="text" class="ab-title" value="" placeholder="Ability Name">
+                    </div>
+                    <div>
+                        <label>Uses</label>
+                        <input type="number" class="ab-uses" value="" placeholder="∞">
+                    </div>
+                </div>
+                <div>
+                    <label>Description</label>
+                    <textarea class="ab-desc" placeholder="What does this do?"></textarea>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="removeAbility(this)">Delete Ability</button>
+            `;
+            container.appendChild(div);
+        };
+
+        window.removeAbility = (btnElement) => {
+            if(confirm("Remove this ability?")) {
+                btnElement.closest('.ability-item').remove();
+            }
+        };
+
+        window.saveCharacter = async () => {
+            if (!currentEditingId) return;
+
+            const saveBtn = document.querySelector('.btn-save');
+            saveBtn.innerText = "Saving...";
+            saveBtn.disabled = true;
+
+            const newDeviceId = document.getElementById('edit-device-id').value.trim();
+            
+            // Scrape abilities from the DOM
+            const abilityItems = document.querySelectorAll('.ability-item');
+            const updatedAbilities = [];
+
+            abilityItems.forEach(item => {
+                const title = item.querySelector('.ab-title').value.trim();
+                const desc = item.querySelector('.ab-desc').value.trim();
+                const usesVal = item.querySelector('.ab-uses').value;
+
+                if (title) { // Only save if it has a title
+                    const abilityObj = {
+                        title: title,
+                        description: desc
                     };
-                    input.onblur = saveName; input.onkeydown = (e) => { if (e.key === 'Enter') saveName(); };
-                    titleBlock.replaceChild(input, titleText);
-                    input.focus();
-                };
-
-                const deleteGroupBtn = document.createElement('button');
-                deleteGroupBtn.className = "icon-btn"; deleteGroupBtn.innerHTML = "🗑️"; deleteGroupBtn.title = "Delete empty group";
-                deleteGroupBtn.onclick = async () => {
-                    const charsInGroup = liveCharacters.filter(c => c.groupId === group.id);
-                    if (charsInGroup.length > 0) return alert("Move all players out of this group before deleting it!");
-                    if (confirm(`Delete ${group.name}?`)) await deleteDoc(doc(db, "groups", group.id));
-                };
-
-                titleBlock.appendChild(titleText); titleBlock.appendChild(editBtn);
-                header.appendChild(titleBlock); header.appendChild(deleteGroupBtn);
-                groupEl.appendChild(header);
-
-                const grid = document.createElement('div');
-                grid.className = "group-grid";
-
-                const charsInGroup = liveCharacters.filter(c => c.groupId === group.id);
-                charsInGroup.forEach(char => {
-                    const card = document.createElement('div');
-                    card.className = "gm-char-card"; card.draggable = true;
-                    card.innerHTML = `
-                        <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${char.name}</div>
-                        <div style="font-size: 0.85rem; opacity: 0.6;">${char.class}</div>
-                        <div style="font-size: 0.75rem; color: var(--accent-glow); margin-top: 10px;">${char.campaign}</div>
-                    `;
-
-                    card.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', char.id);
-                        const dragGhost = card.cloneNode(true);
-                        dragGhost.style.position = "absolute"; dragGhost.style.top = "-1000px"; dragGhost.style.transform = "scale(1.1) rotate(5deg)";
-                        dragGhost.style.boxShadow = "0 10px 20px rgba(0,0,0,0.5)"; dragGhost.style.border = `1px solid ${syncColor}`;
-                        document.body.appendChild(dragGhost);
-                        e.dataTransfer.setDragImage(dragGhost, dragGhost.offsetWidth / 2, dragGhost.offsetHeight / 2);
-                        setTimeout(() => { card.classList.add('ghost-state'); dragGhost.remove(); }, 0);
-                    });
-                    card.addEventListener('dragend', () => card.classList.remove('ghost-state'));
-                    card.addEventListener('click', () => window.openCharEditModal(char.id));
-
-                    grid.appendChild(card);
-                });
-
-                if (charsInGroup.length === 0) grid.innerHTML = `<div style="opacity: 0.3; grid-column: 1 / -1; font-style: italic;">Empty Group. Drag players here.</div>`;
-                groupEl.appendChild(grid); container.appendChild(groupEl);
+                    // Handle optional uses
+                    if (usesVal !== "") {
+                        abilityObj.uses = parseInt(usesVal, 10);
+                    }
+                    updatedAbilities.push(abilityObj);
+                }
             });
+
+            try {
+                await updateDoc(doc(db, "characters", currentEditingId), {
+                    deviceId: newDeviceId,
+                    abilities: updatedAbilities
+                });
+                closeModal();
+            } catch (error) {
+                console.error("Error updating character: ", error);
+                alert("Failed to save changes. Check console.");
+            } finally {
+                saveBtn.innerText = "Save Changes";
+                saveBtn.disabled = false;
+            }
+        };
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
         }
     </script>
 </body>
