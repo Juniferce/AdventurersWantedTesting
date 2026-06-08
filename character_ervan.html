@@ -67,7 +67,7 @@
             color: var(--dark-text);
         }
 
-        /* Corrected to Vibrant Parchment Color Setup */
+        /* Vibrant Parchment Color Setup */
         .parchment-sheet {
             background: var(--parchment-bright);
             border: 3px solid var(--accent-ink);
@@ -79,6 +79,7 @@
             max-height: 1200px;
             opacity: 1;
             transition: max-height 0.45s cubic-bezier(0.4, 0, 1, 1), padding 0.45s ease, transform 0.45s ease, opacity 0.3s ease;
+            overflow: hidden;
         }
 
         .parchment-sheet.roll-closed {
@@ -89,37 +90,42 @@
             margin-bottom: 0 !important;
             transform: scaleY(0);
             opacity: 0;
-            overflow: hidden;
+            border-width: 0;
         }
 
-        .roster-switcher-box {
-            background: rgba(255, 255, 255, 0.4);
-            border: 2px dashed var(--accent-ink);
-            border-radius: 4px 10px 4px 10px;
-            padding: 8px 12px;
+        /* Horizontal Tab Buttons Setup */
+        .roster-tabs-container {
+            display: none; /* Shown via JS if multiple chars exist */
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
             margin-bottom: 15px;
-            display: none; 
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
         }
 
-        .roster-select {
-            background: transparent;
-            border: 1px solid var(--accent-ink);
-            font-family: var(--sketch-font);
-            color: var(--dark-text);
-            font-size: 1.15rem;
+        .roster-tab-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px dashed rgba(255, 181, 125, 0.5); /* Faded parchment color */
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: 'Architects Daughter', sans-serif;
             font-weight: bold;
-            padding: 4px;
+            font-size: 1.15rem;
+            color: var(--parchment-bright);
             cursor: pointer;
-            outline: none;
-            max-width: 60%;
+            transition: all 0.2s ease;
         }
 
-        .roster-select option {
+        .roster-tab-btn:hover {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: var(--parchment-bright);
+        }
+
+        .roster-tab-btn.active-tab {
             background: var(--parchment-bright);
             color: var(--dark-text);
+            border: 2px solid var(--accent-ink);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
         .header-block {
@@ -262,17 +268,13 @@
     <div id="app-container">
         <main class="sheet-container">
             
+            <!-- Horizontal Tab Switcher -->
+            <div id="roster-tabs-container" class="roster-tabs-container">
+                <!-- Buttons injected dynamically via runtime context -->
+            </div>
+
             <!-- Vitals Frame -->
             <div class="parchment-sheet wiggle-ui sheet-roll-target">
-                
-                <!-- Cross-Character Matrix Dropdown Tab Selector -->
-                <div id="roster-switcher" class="roster-switcher-box">
-                    <span style="font-weight: bold; font-size: 1.05rem;">📜 Active Profile:</span>
-                    <select id="character-select-dropdown" class="roster-select">
-                        <!-- Options injected dynamically via runtime context -->
-                    </select>
-                </div>
-
                 <div class="header-block">
                     <div>
                         <h1 id="display-name" class="char-title">Loading...</h1>
@@ -414,7 +416,6 @@
                         const row = document.createElement('div');
                         row.className = 'ability-row';
 
-                        // Check if optional uses parameter is explicitly specified in your Firestore backend console
                         let usesMarkup = '';
                         if (ability.uses !== undefined && ability.uses !== null) {
                             usesMarkup = `<span class="ability-uses-tag">Uses Remaining: ${ability.uses}</span>`;
@@ -449,32 +450,51 @@
                 
                 const querySnapshot = await getDocs(q);
                 if (querySnapshot.size > 1) {
-                    const selectEl = document.getElementById('character-select-dropdown');
-                    selectEl.innerHTML = '';
+                    const tabsContainer = document.getElementById('roster-tabs-container');
+                    tabsContainer.innerHTML = '';
                     
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const opt = document.createElement('option');
-                        opt.value = doc.id;
-                        opt.innerText = `${data.name} (${data.class})`;
-                        if (doc.id === characterId) opt.selected = true;
-                        selectEl.appendChild(opt);
+                    querySnapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        const btn = document.createElement('button');
+                        btn.className = 'roster-tab-btn';
+                        btn.innerText = data.name;
+
+                        // Mark active if matches current
+                        if (docSnap.id === characterId) {
+                            btn.classList.add('active-tab');
+                        }
+
+                        btn.addEventListener('click', () => {
+                            if (docSnap.id === characterId) return; // Ignore if already selected
+                            
+                            // Highlight new active tab immediately
+                            document.querySelectorAll('.roster-tab-btn').forEach(b => b.classList.remove('active-tab'));
+                            btn.classList.add('active-tab');
+
+                            const newCharacterId = docSnap.id;
+                            localStorage.setItem('currentCharacterId', newCharacterId);
+                            characterId = newCharacterId;
+                            
+                            // Trigger Roll-Up animation for all visible sections
+                            const sheets = document.querySelectorAll('.sheet-roll-target');
+                            sheets.forEach(sheet => sheet.classList.add('roll-closed'));
+
+                            // Wait for roll transition (450ms), swap data, and unroll
+                            setTimeout(() => {
+                                bindCharacterRealtimeStream(newCharacterId);
+                                
+                                // Brief delay to ensure DOM parses the new layout height properly before unrolling
+                                setTimeout(() => {
+                                    sheets.forEach(sheet => sheet.classList.remove('roll-closed'));
+                                }, 50);
+                            }, 450); 
+                        });
+
+                        tabsContainer.appendChild(btn);
                     });
 
-                    selectEl.addEventListener('change', (e) => {
-                        const newCharacterId = e.target.value;
-                        localStorage.setItem('currentCharacterId', newCharacterId);
-                        characterId = newCharacterId;
-                        
-                        const flash = document.getElementById('color-flash');
-                        flash.style.opacity = '0.8';
-                        setTimeout(() => {
-                            bindCharacterRealtimeStream(newCharacterId);
-                            flash.style.opacity = '0';
-                        }, 250);
-                    });
-
-                    document.getElementById('roster-switcher').style.display = 'flex';
+                    // Reveal tab container
+                    tabsContainer.style.display = 'flex';
                 }
             } catch(err) {
                 console.error("Error drawing active roster: ", err);
