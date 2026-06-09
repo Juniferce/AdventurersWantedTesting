@@ -509,14 +509,13 @@
                             usesMarkup = `<span class="ability-uses-tag">Uses Remaining: ${ability.uses}</span>`;
                         }
 
+                        // Keep the template variable tight against the tags to prevent code-indentation offsets
                         row.innerHTML = `
                             <div class="ability-header">
                                 <span>✨ ${ability.title}</span>
                                 ${usesMarkup}
                             </div>
-                            <p style="margin: 5px 0 0 0; font-size: 1.05rem; opacity: 0.85; line-height: 1.35; white-space: pre-wrap;">
-                                ${ability.description}
-                            </p>
+                            <p style="margin: 5px 0 0 0; font-size: 1.05rem; opacity: 0.85; line-height: 1.35; white-space: pre-wrap; text-align: left;">${(ability.description || '').trim()}</p>
                         `;
                         abilitiesContainer.appendChild(row);
                     });
